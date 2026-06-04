@@ -333,6 +333,7 @@ const PLATFORMS=[
 const TYPES=[{id:"static",label:"Static Image"},{id:"video",label:"Video / GIF"},{id:"carousel",label:"Carousel"}];
 const TABS=[
   {id:"overview",label:"Overview",icon:"ti-layout-dashboard"},
+  {id:"quickwins",label:"Quick Wins",icon:"ti-bolt"},
   {id:"benchmark",label:"Benchmarks",icon:"ti-chart-bar"},
   {id:"topper",label:"Top Performers",icon:"ti-trophy"},
   {id:"elements",label:"Elements",icon:"ti-components"},
@@ -340,6 +341,7 @@ const TABS=[
   {id:"platform",label:"Platform",icon:"ti-device-mobile"},
   {id:"copy",label:"Copy",icon:"ti-text-size"},
   {id:"abtests",label:"A/B Tests",icon:"ti-test-pipe"},
+  {id:"generate",label:"Generate Creative",icon:"ti-wand"},
 ];
 
 // Industry benchmarks by platform
@@ -472,8 +474,8 @@ async function runAnalysis(){
   const ctx=document.getElementById("context-input").value;
   const isVid=selType==="video"||file.type?.startsWith("video/");
 
-  const sys=`You are an expert advertising creative analyst specializing in performance marketing. Respond ONLY with valid JSON (no markdown, no backticks, no extra text) with this EXACT structure:
-{"overallScore":<1-10>,"headline":"<one sharp verdict sentence>","scores":{"attention":<1-10>,"clarity":<1-10>,"emotion":<1-10>,"brandAlignment":<1-10>,"cta":<1-10>,"platformFit":<1-10>},"whyWorking":["<specific reason>","<specific reason>","<specific reason>"],"whyNotWorking":["<specific issue>","<specific issue>"],"elements":[{"name":"<element name>","icon":"ti-<tabler-icon>","desc":"<performance impact>","impact":"high|medium|low"}],"heatmapInsights":{"topAttentionZones":["<zone>","<zone>"],"lowAttentionZones":["<zone>"],"eyeFlowPattern":"<description>"},"audienceResonance":{"likelyAudience":"<who>","emotionalTriggers":["<trigger>","<trigger>"],"psychologicalPrinciples":["<principle>","<principle>"]},"platformOptimization":{"fitScore":<1-10>,"platformSpecificTips":["<tip>","<tip>","<tip>"],"formatRecommendation":"<format>"},"copyAnalysis":{"headline":"<detected headline>","strength":"<assessment>","suggestions":["<suggestion>","<suggestion>"]},"abTestIdeas":["<specific test idea>","<specific test idea>","<specific test idea>"],"competitiveIntelligence":{"industryContext":"<1-2 sentences on how this compares to typical ${pl} ads in this niche>","topPerformerDifferences":[{"rank":1,"title":"<what top performers do differently #1>","icon":"ti-<tabler-icon>","desc":"<specific actionable detail>","impactLevel":"high|medium"},{"rank":2,"title":"<what top performers do differently #2>","icon":"ti-<tabler-icon>","desc":"<specific actionable detail>","impactLevel":"high|medium"},{"rank":3,"title":"<what top performers do differently #3>","icon":"ti-<tabler-icon>","desc":"<specific actionable detail>","impactLevel":"high|medium"},{"rank":4,"title":"<what top performers do differently #4>","icon":"ti-<tabler-icon>","desc":"<specific actionable detail>","impactLevel":"medium|low"},{"rank":5,"title":"<what top performers do differently #5>","icon":"ti-<tabler-icon>","desc":"<specific actionable detail>","impactLevel":"medium|low"}],"benchmarkNotes":"<2-3 sentences on what the score gaps mean and what to prioritize>"}}`;
+  const sys=`You are a world-class performance marketing creative strategist with 15+ years experience analyzing ad creatives for top DTC brands. You give brutally honest, hyper-specific, actionable analysis — not generic advice. Every insight must reference a SPECIFIC visual element, copy phrase, or design choice you can actually see in the image. Respond ONLY with valid JSON (no markdown, no backticks, no extra text) with this EXACT structure:
+{"overallScore":<1-10>,"headline":"<one sharp, specific verdict — mention the actual product/brand and key finding>","scores":{"attention":<1-10>,"clarity":<1-10>,"emotion":<1-10>,"brandAlignment":<1-10>,"cta":<1-10>,"platformFit":<1-10>},"scoreRationale":{"attention":"<2 sentences explaining exactly WHY this attention score — reference specific visual elements>","clarity":"<2 sentences on message clarity — what is clear, what is confusing, reference actual copy>","emotion":"<2 sentences on emotional pull — what feeling does it create, why does it work or not for ${pl} TOF>","brandAlignment":"<2 sentences on brand consistency — colors, fonts, tone, logo placement>","cta":"<2 sentences on CTA strength — exact CTA text, placement, contrast, urgency level>","platformFit":"<2 sentences on ${pl} fit — aspect ratio, text density, mobile rendering, feed behavior>"},"whyWorking":["<specific observation with exact element — e.g. 'The bold green headline font at 48px creates instant pattern interrupt against typical white-background feed posts'>","<specific observation>","<specific observation>","<specific observation>"],"whyNotWorking":["<specific issue with exact element and WHY it hurts performance — e.g. 'Hindi body copy in 10px font is unreadable at thumb-scroll speed, causing drop-off before value prop lands'>","<specific issue>","<specific issue>"],"quickWins":[{"action":"<one specific change to make>","expectedImpact":"<what metric improves and by roughly how much>","effort":"low|medium"},{"action":"<one specific change>","expectedImpact":"<metric impact>","effort":"low|medium"},{"action":"<one specific change>","expectedImpact":"<metric impact>","effort":"low|medium"}],"elements":[{"name":"<element name>","icon":"ti-<tabler-icon>","desc":"<specific performance impact with exact detail>","impact":"high|medium|low","recommendation":"<one specific action to improve this element>"}],"heatmapInsights":{"topAttentionZones":["<specific zone with reason>","<specific zone with reason>"],"lowAttentionZones":["<specific zone with reason>"],"eyeFlowPattern":"<detailed description of eye movement path with specific elements>","mobileBehavior":"<how this looks on a 375px mobile screen at scroll speed>"},"audienceResonance":{"likelyAudience":"<specific demographic with psychographic detail — age, interest, pain point>","doesNotResonate":"<who this creative will NOT work for and why>","emotionalTriggers":["<specific trigger with explanation>","<specific trigger>","<specific trigger>"],"psychologicalPrinciples":["<principle with how it applies to THIS creative specifically>","<principle>"]},"platformOptimization":{"fitScore":<1-10>,"platformSpecificTips":["<very specific ${pl} tip referencing actual platform behavior>","<specific tip>","<specific tip>"],"formatRecommendation":"<exact format recommendation with dimensions>","bestPlacement":"<Feed/Stories/Reels/Search — which placement and why>","worstPlacement":"<which placement to avoid and why>"},"copyAnalysis":{"headline":"<exact headline text detected>","bodyText":"<exact body copy detected>","ctaText":"<exact CTA button/text detected>","toneAnalysis":"<emotional/rational/fear/aspiration — what tone and is it right for TOF vs BOF>","readabilityScore":"<Easy/Medium/Hard at scroll speed on mobile>","strength":"<2-3 sentences specific assessment>","suggestions":["<specific rewrite suggestion with example copy>","<specific suggestion with example>","<specific suggestion>"]},"abTestIdeas":[{"test":"<what to test>","control":"<current version description>","variant":"<exact variant description>","hypothesis":"<why this variant should win>","primaryMetric":"CTR|CPC|ROAS|CVR"},{"test":"<what to test>","control":"<current>","variant":"<variant>","hypothesis":"<why>","primaryMetric":"CTR|CPC|ROAS|CVR"},{"test":"<what to test>","control":"<current>","variant":"<variant>","hypothesis":"<why>","primaryMetric":"CTR|CPC|ROAS|CVR"}],"competitiveIntelligence":{"industryContext":"<2-3 sentences specifically comparing to typical ${pl} ads in this exact niche — mention specific creative patterns you see dominating>","topPerformerDifferences":[{"rank":1,"title":"<specific thing top performers do>","icon":"ti-<tabler-icon>","desc":"<detailed, specific, actionable — with example of how to implement>","impactLevel":"high|medium"},{"rank":2,"title":"<specific thing>","icon":"ti-<tabler-icon>","desc":"<detailed specific actionable>","impactLevel":"high|medium"},{"rank":3,"title":"<specific thing>","icon":"ti-<tabler-icon>","desc":"<detailed specific actionable>","impactLevel":"high|medium"},{"rank":4,"title":"<specific thing>","icon":"ti-<tabler-icon>","desc":"<detailed specific actionable>","impactLevel":"medium|low"},{"rank":5,"title":"<specific thing>","icon":"ti-<tabler-icon>","desc":"<detailed specific actionable>","impactLevel":"medium|low"}],"benchmarkNotes":"<3-4 sentences on score gaps, what they mean for actual campaign performance, and prioritization order for fixes>"}}`;
 
   try{
     const b64=await toB64(file);
@@ -483,7 +485,7 @@ async function runAnalysis(){
     const r=await fetch("/api/analyze",{
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},
-      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:4000,system:sys,messages:[{role:"user",content}]})
+      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:6000,system:sys,messages:[{role:"user",content}]})
     });
     const data=await r.json();
     if(data.error)throw new Error(data.error.message);
@@ -610,18 +612,50 @@ function switchTab(id,pc,pl,bm){
         sBar("CTA effectiveness",analysis.scores?.cta,"#fbbf24",bm.cta)+
         sBar("Platform fit",analysis.scores?.platformFit,pc,bm.platformFit)+
         `<div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><div style="width:12px;height:2px;background:rgba(255,255,255,0.2);border-radius:1px"></div><span style="font-size:11px;color:var(--t3)">White marker = ${pl} industry average</span></div>`,"","Industry Avg") +
+
+      // Score rationale expandable
+      (analysis.scoreRationale?`<div class="s-card" style="margin-bottom:12px">
+        <div class="s-card-title"><i class="ti ti-info-circle" style="color:var(--blue)" aria-hidden="true"></i><span>Why These Scores?</span></div>
+        ${["attention","clarity","emotion","brandAlignment","cta","platformFit"].map(k=>{
+          const labels={attention:"Attention",clarity:"Clarity",emotion:"Emotion",brandAlignment:"Brand Alignment",cta:"CTA",platformFit:"Platform Fit"};
+          const colors={attention:"#60a5fa",clarity:"#34d399",emotion:"#f472b6",brandAlignment:"#a78bfa",cta:"#fbbf24",platformFit:pc};
+          return analysis.scoreRationale[k]?`<div style="margin-bottom:12px;padding:10px 12px;background:var(--bg-surface);border-radius:var(--r);border-left:3px solid ${colors[k]}">
+            <div style="font-size:11px;font-weight:600;color:${colors[k]};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">${labels[k]}: ${analysis.scores?.[k]}/10</div>
+            <p style="font-size:12px;color:var(--t2);line-height:1.6">${analysis.scoreRationale[k]}</p>
+          </div>`:"";
+        }).join("")}
+      </div>`:"") +
+
       sCard("ti-thumb-up","Why This Creative is Working",
         (analysis.whyWorking||[]).map(w=>`<div class="check-item"><i class="ti ti-check" style="color:var(--green)" aria-hidden="true"></i><span>${w}</span></div>`).join(""),"var(--green)")+
       ((analysis.whyNotWorking||[]).length>0?sCard("ti-alert-triangle","Areas for Improvement",
         (analysis.whyNotWorking||[]).map(w=>`<div class="check-item"><i class="ti ti-alert-circle" style="color:var(--yellow)" aria-hidden="true"></i><span>${w}</span></div>`).join(""),"var(--yellow)"):"") +
       (analysis.heatmapInsights?sCard("ti-flame","Heatmap Insights",`
         <p class="section-label">Eye Flow Pattern</p>
-        <p style="font-size:13px;margin-bottom:13px;color:var(--t1)">${analysis.heatmapInsights.eyeFlowPattern}</p>
+        <p style="font-size:13px;margin-bottom:8px;color:var(--t1)">${analysis.heatmapInsights.eyeFlowPattern}</p>
+        ${analysis.heatmapInsights.mobileBehavior?`<div style="padding:9px 12px;background:rgba(124,106,247,0.08);border-radius:var(--r);margin-bottom:12px;border:1px solid rgba(124,106,247,0.2)"><span style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em">📱 Mobile Behavior</span><p style="font-size:12px;color:var(--t2);margin-top:3px;line-height:1.5">${analysis.heatmapInsights.mobileBehavior}</p></div>`:""}
         <p class="section-label">High-Attention Zones</p>
         <div style="margin-bottom:10px">${(analysis.heatmapInsights.topAttentionZones||[]).map(z=>`<span class="tag tag-success">${z}</span>`).join("")}</div>
         ${(analysis.heatmapInsights.lowAttentionZones||[]).length>0?`<p class="section-label">Low-Attention Zones</p><div style="margin-bottom:12px">${(analysis.heatmapInsights.lowAttentionZones||[]).map(z=>`<span class="tag tag-danger">${z}</span>`).join("")}</div>`:""}
         <button class="preview-btn" onclick="toggleHeatmap()" style="font-size:12px;padding:6px 13px;border-color:var(--accent);color:var(--accent)"><i class="ti ti-flame" aria-hidden="true"></i> Toggle Heatmap Overlay</button>
       `,"#f472b6"):"");
+  }
+
+  if(id==="quickwins"){
+    const qw=analysis.quickWins||[];
+    c.innerHTML=`<div class="s-card fade">
+      <div class="s-card-title"><i class="ti ti-bolt" style="color:var(--yellow)" aria-hidden="true"></i><span>Quick Wins — Highest ROI Fixes</span><span class="title-badge" style="background:rgba(251,191,36,0.1);color:var(--yellow)">${qw.length} actions</span></div>
+      <p style="font-size:12px;color:var(--t2);margin-bottom:14px">Ranked by impact-to-effort ratio. Start with these before any major redesign.</p>
+      ${qw.map((w,i)=>`
+        <div style="display:flex;gap:12px;padding:14px;background:var(--bg-surface);border-radius:var(--rl);margin-bottom:10px;border:1px solid var(--border);transition:border-color .15s" onmouseover="this.style.borderColor='var(--border-md)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="width:32px;height:32px;border-radius:99px;background:linear-gradient(135deg,rgba(251,191,36,0.2),rgba(251,191,36,0.1));border:1px solid rgba(251,191,36,0.3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--yellow);flex-shrink:0">${i+1}</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px">${w.action}</div>
+            <div style="font-size:12px;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ti ti-trending-up" style="font-size:12px" aria-hidden="true"></i>${w.expectedImpact}</div>
+            <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:${w.effort==="low"?"rgba(52,211,153,0.1)":"rgba(251,191,36,0.1)"};color:${w.effort==="low"?"var(--green)":"var(--yellow)"}">⚡ ${w.effort==="low"?"Low effort":"Medium effort"}</span>
+          </div>
+        </div>`).join("")}
+    </div>`;
   }
 
   if(id==="benchmark"){
@@ -672,13 +706,12 @@ function switchTab(id,pc,pl,bm){
     const ci=analysis.competitiveIntelligence||{};
     const tpd=ci.topPerformerDifferences||[];
     const rankColors=["gold","silver","bronze","silver","bronze"];
-    const rankIcons=["🥇","🥈","🥉","4","5"];
     c.innerHTML=`<div class="s-card fade">
       <div class="s-card-title"><i class="ti ti-trophy" style="color:var(--yellow)" aria-hidden="true"></i><span>What Top Performers Do Differently</span></div>
       ${ci.industryContext?`<div style="padding:12px 14px;background:var(--bg-surface);border-radius:var(--r);font-size:13px;line-height:1.65;color:var(--t2);margin-bottom:14px;border:1px solid var(--border)">${ci.industryContext}</div>`:""}
       ${tpd.map((t,i)=>`
         <div class="performer-row ${rankColors[i]||"bronze"}">
-          <div class="performer-icon">${t.icon?`<i class="ti ${t.icon}" style="color:var(--t2)" aria-hidden="true"></i>`:rankIcons[i]}</div>
+          <div class="performer-icon">${t.icon?`<i class="ti ${t.icon}" style="color:var(--t2)" aria-hidden="true"></i>`:i+1}</div>
           <div style="flex:1">
             <div class="performer-title">${t.title}</div>
             <div class="performer-desc">${t.desc}</div>
@@ -699,6 +732,7 @@ function switchTab(id,pc,pl,bm){
               <span class="impact-badge impact-${el.impact}">${el.impact}</span>
             </div>
             <p class="el-desc">${el.desc}</p>
+            ${el.recommendation?`<div style="margin-top:6px;padding:6px 9px;background:rgba(124,106,247,0.08);border-radius:var(--r);font-size:11px;color:var(--accent);border:1px solid rgba(124,106,247,0.15)"><i class="ti ti-arrow-right" aria-hidden="true"></i> ${el.recommendation}</div>`:""}
           </div>
         </div>`).join(""),"var(--blue)");
   }
@@ -706,8 +740,16 @@ function switchTab(id,pc,pl,bm){
   if(id==="audience"){
     const a=analysis.audienceResonance||{};
     c.innerHTML=sCard("ti-users","Audience Resonance",`
-      <p class="section-label">Likely Resonating Audience</p>
-      <p style="font-size:13px;margin-bottom:14px;color:var(--t1)">${a.likelyAudience||""}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="padding:11px;background:var(--bg-surface);border-radius:var(--r);border:1px solid var(--border)">
+          <p class="section-label" style="margin-bottom:5px">✅ Resonates With</p>
+          <p style="font-size:12px;color:var(--t1);line-height:1.5">${a.likelyAudience||""}</p>
+        </div>
+        <div style="padding:11px;background:var(--bg-surface);border-radius:var(--r);border:1px solid var(--border)">
+          <p class="section-label" style="margin-bottom:5px">❌ Won't Resonate</p>
+          <p style="font-size:12px;color:var(--t2);line-height:1.5">${a.doesNotResonate||"Not specified"}</p>
+        </div>
+      </div>
       <p class="section-label">Emotional Triggers</p>
       <div style="margin-bottom:14px">${(a.emotionalTriggers||[]).map(t=>`<span class="tag tag-info">${t}</span>`).join("")}</div>
       <p class="section-label">Psychological Principles at Play</p>
@@ -721,8 +763,15 @@ function switchTab(id,pc,pl,bm){
     c.innerHTML=sCard("ti-device-mobile",`${pl} Optimization`,`
       <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg-surface);border-radius:var(--r);margin-bottom:14px">
         <div style="font-family:var(--font-display);font-size:36px;font-weight:700;color:${fitColor}">${po.fitScore}<span style="font-size:16px;color:var(--t2)">/10</span></div>
-        <div><div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px">Platform Fit Score</div><div style="font-size:12px;color:var(--t2)">${po.formatRecommendation||""}</div></div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px">Platform Fit Score</div>
+          <div style="font-size:12px;color:var(--t2)">${po.formatRecommendation||""}</div>
+        </div>
       </div>
+      ${po.bestPlacement||po.worstPlacement?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        ${po.bestPlacement?`<div style="padding:10px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:var(--r)"><p style="font-size:10px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">✅ Best Placement</p><p style="font-size:12px;color:var(--t1)">${po.bestPlacement}</p></div>`:""}
+        ${po.worstPlacement?`<div style="padding:10px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:var(--r)"><p style="font-size:10px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">❌ Avoid</p><p style="font-size:12px;color:var(--t1)">${po.worstPlacement}</p></div>`:""}
+      </div>`:""}
       <p class="section-label">Platform-Specific Tips</p>
       ${(po.platformSpecificTips||[]).map(t=>`<div class="check-item"><i class="ti ti-arrow-right" style="color:var(--accent)" aria-hidden="true"></i><span>${t}</span></div>`).join("")}
     `,pc);
@@ -730,29 +779,257 @@ function switchTab(id,pc,pl,bm){
 
   if(id==="copy"){
     const cv=analysis.copyAnalysis||{};
+    const readColor=cv.readabilityScore==="Easy"?"var(--green)":cv.readabilityScore==="Hard"?"var(--red)":"var(--yellow)";
     c.innerHTML=sCard("ti-text-size","Copy Analysis",`
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="padding:10px;background:var(--bg-surface);border-radius:var(--r);text-align:center">
+          <p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Readability</p>
+          <p style="font-size:13px;font-weight:600;color:${readColor}">${cv.readabilityScore||"—"}</p>
+        </div>
+        <div style="padding:10px;background:var(--bg-surface);border-radius:var(--r);text-align:center">
+          <p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Tone</p>
+          <p style="font-size:13px;font-weight:600;color:var(--blue)">${cv.toneAnalysis?cv.toneAnalysis.split("—")[0].trim():"—"}</p>
+        </div>
+        <div style="padding:10px;background:var(--bg-surface);border-radius:var(--r);text-align:center">
+          <p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">CTA Text</p>
+          <p style="font-size:11px;font-weight:600;color:var(--accent)">${cv.ctaText||"None detected"}</p>
+        </div>
+      </div>
       <p class="section-label">Detected Headline</p>
       <div class="quote-box">"${cv.headline||""}"</div>
-      <p class="section-label">Copy Strength Assessment</p>
-      <p style="font-size:13px;margin-bottom:14px;color:var(--t1)">${cv.strength||""}</p>
-      <p class="section-label">Improvement Suggestions</p>
+      ${cv.bodyText?`<p class="section-label">Body Copy</p><div style="padding:9px 12px;background:var(--bg-surface);border-radius:var(--r);font-size:12px;color:var(--t2);margin-bottom:13px;line-height:1.6">${cv.bodyText}</div>`:""}
+      <p class="section-label">Tone Analysis</p>
+      <p style="font-size:12px;color:var(--t2);margin-bottom:13px;line-height:1.6">${cv.toneAnalysis||""}</p>
+      <p class="section-label">Strength Assessment</p>
+      <p style="font-size:13px;margin-bottom:14px;color:var(--t1);line-height:1.6">${cv.strength||""}</p>
+      <p class="section-label">Rewrite Suggestions</p>
       ${(cv.suggestions||[]).map(s=>`<div class="check-item"><i class="ti ti-pencil" style="color:var(--yellow)" aria-hidden="true"></i><span>${s}</span></div>`).join("")}
     `,"var(--yellow)");
   }
 
   if(id==="abtests"){
+    const tests=analysis.abTestIdeas||[];
+    const isRich=tests.length>0&&typeof tests[0]==="object";
     c.innerHTML=sCard("ti-test-pipe","A/B Test Ideas",`
-      <p style="font-size:12px;color:var(--t2);margin-bottom:12px">High-impact tests based on this creative's specific gaps:</p>
-      ${(analysis.abTestIdeas||[]).map((idea,i)=>`
-        <div class="ab-row">
-          <div class="ab-num">${i+1}</div>
-          <span>${idea}</span>
-        </div>`).join("")}
+      <p style="font-size:12px;color:var(--t2);margin-bottom:14px">Each test includes hypothesis and primary metric to track:</p>
+      ${isRich?tests.map((t,i)=>`
+        <div style="padding:14px;background:var(--bg-surface);border-radius:var(--rl);margin-bottom:10px;border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="width:24px;height:24px;border-radius:99px;background:linear-gradient(135deg,rgba(124,106,247,0.2),rgba(124,106,247,0.1));border:1px solid rgba(124,106,247,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">${i+1}</div>
+            <span style="font-size:13px;font-weight:600">${t.test||""}</span>
+            <span style="margin-left:auto;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(79,209,197,0.1);color:var(--accent2)">${t.primaryMetric||""}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <div style="padding:8px;background:var(--bg-card2);border-radius:var(--r)"><p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;margin-bottom:3px">Control</p><p style="font-size:11px;color:var(--t2)">${t.control||""}</p></div>
+            <div style="padding:8px;background:rgba(124,106,247,0.08);border-radius:var(--r);border:1px solid rgba(124,106,247,0.2)"><p style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;margin-bottom:3px">Variant</p><p style="font-size:11px;color:var(--t1)">${t.variant||""}</p></div>
+          </div>
+          <div style="padding:8px 10px;background:rgba(52,211,153,0.05);border-radius:var(--r);border-left:2px solid var(--green)">
+            <p style="font-size:11px;color:var(--t2)"><span style="color:var(--green);font-weight:600">Hypothesis:</span> ${t.hypothesis||""}</p>
+          </div>
+        </div>`).join(""):
+        tests.map((idea,i)=>`<div class="ab-row"><div class="ab-num">${i+1}</div><span>${idea}</span></div>`).join("")}
     `,"var(--accent2)");
+  }
+
+  if(id==="generate"){
+    const pl2=PLATFORMS.find(p=>p.id===selPlat)?.label||selPlat;
+    c.innerHTML=`<div class="s-card fade">
+      <div class="s-card-title">
+        <i class="ti ti-wand" style="color:var(--accent)" aria-hidden="true"></i>
+        <span>Generate Improved Creative</span>
+        <span class="title-badge" style="background:rgba(124,106,247,0.15);color:var(--accent)">AI-Powered</span>
+      </div>
+
+      <div style="padding:14px;background:linear-gradient(135deg,rgba(124,106,247,0.08),rgba(79,209,197,0.05));border:1px solid rgba(124,106,247,0.2);border-radius:var(--rl);margin-bottom:16px">
+        <p style="font-size:12px;color:var(--t2);line-height:1.6">Based on your analysis, the AI will generate a complete improved creative brief + HTML/SVG mockup that fixes the identified issues and applies top performer insights.</p>
+      </div>
+
+      <!-- Variant selector -->
+      <p class="section-label" style="margin-bottom:8px">Choose what to generate</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+        <div class="gen-option active" data-val="improved" onclick="selectGenOption(this)" style="padding:12px;background:rgba(124,106,247,0.12);border:1px solid rgba(124,106,247,0.4);border-radius:var(--r);cursor:pointer;text-align:center;transition:all .15s">
+          <div style="font-size:18px;margin-bottom:4px">✨</div>
+          <div style="font-size:12px;font-weight:600;color:var(--accent)">Improved Version</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">Fix all issues found</div>
+        </div>
+        <div class="gen-option" data-val="variant" onclick="selectGenOption(this)" style="padding:12px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;text-align:center;transition:all .15s">
+          <div style="font-size:18px;margin-bottom:4px">🧪</div>
+          <div style="font-size:12px;font-weight:600;color:var(--t1)">A/B Variant</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">Test-ready alternate</div>
+        </div>
+        <div class="gen-option" data-val="hook" onclick="selectGenOption(this)" style="padding:12px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;text-align:center;transition:all .15s">
+          <div style="font-size:18px;margin-bottom:4px">⚡</div>
+          <div style="font-size:12px;font-weight:600;color:var(--t1)">TOF Hook Focus</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">Max scroll-stop power</div>
+        </div>
+      </div>
+
+      <!-- Additional instructions -->
+      <p class="section-label" style="margin-bottom:6px">Additional instructions <span style="font-weight:400;color:var(--t3)">(optional)</span></p>
+      <textarea id="gen-instructions" placeholder="e.g. Keep the green color scheme, add urgency with a limited time offer, make it more minimal..." style="margin-bottom:14px;min-height:60px"></textarea>
+
+      <button id="gen-btn" onclick="generateCreative()" style="width:100%;padding:13px;border-radius:var(--rl);border:none;background:linear-gradient(135deg,var(--accent),#5b4fd4);color:#fff;font-size:14px;font-weight:700;font-family:var(--font-display);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;letter-spacing:0.02em">
+        <i class="ti ti-wand" aria-hidden="true"></i> Generate Creative Brief + Mockup
+      </button>
+
+      <div id="gen-output" style="margin-top:16px"></div>
+    </div>`;
   }
 }
 
-// Follow-up
+// Generate Creative
+let genOptionVal="improved";
+function selectGenOption(el){
+  document.querySelectorAll(".gen-option").forEach(x=>{
+    x.style.background="var(--bg-surface)";x.style.borderColor="var(--border)";
+    x.querySelector("div:nth-child(2)").style.color="var(--t1)";
+  });
+  el.style.background="rgba(124,106,247,0.12)";el.style.borderColor="rgba(124,106,247,0.4)";
+  el.querySelector("div:nth-child(2)").style.color="var(--accent)";
+  genOptionVal=el.dataset.val;
+}
+
+async function generateCreative(){
+  if(!analysis)return;
+  const btn=document.getElementById("gen-btn");
+  const out=document.getElementById("gen-output");
+  const instructions=document.getElementById("gen-instructions")?.value||"";
+  const pl=PLATFORMS.find(p=>p.id===selPlat)?.label||selPlat;
+
+  btn.innerHTML=`<i class="ti ti-loader-2 spin" aria-hidden="true"></i> Generating…`;
+  btn.disabled=true;
+  out.innerHTML=`<div style="padding:20px;text-align:center;color:var(--t2);font-size:13px">
+    <i class="ti ti-loader-2 spin" style="font-size:24px;display:block;margin-bottom:8px;color:var(--accent)" aria-hidden="true"></i>
+    Analyzing issues & generating improved creative…
+  </div>`;
+
+  const variantInstructions={
+    improved:`Create an IMPROVED version that fixes all identified issues: ${(analysis.whyNotWorking||[]).join("; ")}. Apply these quick wins: ${(analysis.quickWins||[]).map(q=>q.action).join("; ")}.`,
+    variant:`Create an A/B TEST VARIANT. Keep the core concept but test: ${analysis.abTestIdeas&&typeof analysis.abTestIdeas[0]==="object"?analysis.abTestIdeas[0]?.variant:"a different headline and CTA approach"}.`,
+    hook:`Create a TOF HOOK-FIRST version. Lead with the strongest scroll-stop hook, eliminate all secondary information. Optimize purely for thumb-stop and first-click on cold audiences.`
+  };
+
+  const prompt=`You are a world-class performance marketing creative director. Based on this creative analysis, generate an improved ad creative.
+
+ORIGINAL ANALYSIS:
+- Overall score: ${analysis.overallScore}/10
+- Headline detected: ${analysis.copyAnalysis?.headline||"N/A"}
+- Platform: ${pl}
+- What's NOT working: ${(analysis.whyNotWorking||[]).join("; ")}
+- What IS working: ${(analysis.whyWorking||[]).join("; ")}
+- Audience: ${analysis.audienceResonance?.likelyAudience||"N/A"}
+- Top performer insight: ${analysis.competitiveIntelligence?.topPerformerDifferences?.[0]?.desc||"N/A"}
+- CTA weakness: ${analysis.copyAnalysis?.suggestions?.[0]||"N/A"}
+
+TASK: ${variantInstructions[genOptionVal]||variantInstructions.improved}
+${instructions?"ADDITIONAL INSTRUCTIONS: "+instructions:""}
+
+Respond with a JSON object (no markdown, no backticks):
+{
+  "creativeBrief": {
+    "concept": "<2-3 sentence creative concept and rationale>",
+    "keyChange": "<the single most important change from original>",
+    "headline": "<improved headline copy>",
+    "subheadline": "<supporting copy>",
+    "bodyText": "<body copy>",
+    "cta": "<CTA button text>",
+    "visualDirection": "<detailed visual direction — layout, colors, imagery, typography>",
+    "whyItWillPerformBetter": "<3-4 specific reasons this will outperform the original>"
+  },
+  "svgMockup": "<complete SVG code for a 600x600 ad mockup implementing this brief — use the actual copy, colors, layout described. Make it look like a real polished ad creative. Include product placeholder if needed. Use dark/vibrant colors, bold typography. Must be valid standalone SVG.>"
+}`;
+
+  try{
+    const r=await fetch("/api/analyze",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":getKey(),"anthropic-version":"2023-06-01"},
+      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:6000,messages:[{role:"user",content:prompt}]})
+    });
+    const d=await r.json();
+    if(d.error)throw new Error(d.error.message);
+    const txt=d.content?.map(i=>i.text||"").join("")||"";
+    const gen=JSON.parse(txt.replace(/```json|```/g,"").trim());
+    const brief=gen.creativeBrief||{};
+    const svg=gen.svgMockup||"";
+
+    out.innerHTML=`
+      <!-- Generated mockup -->
+      <div style="background:var(--bg-surface);border:1px solid var(--border-md);border-radius:var(--rl);overflow:hidden;margin-bottom:14px">
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:7px">
+            <i class="ti ti-photo" style="color:var(--accent)" aria-hidden="true"></i>
+            <span style="font-size:13px;font-weight:600">Generated Ad Mockup</span>
+          </div>
+          <button onclick="downloadSVG()" style="padding:5px 12px;border-radius:var(--r);border:1px solid var(--border-md);background:var(--bg-card2);color:var(--t2);font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px">
+            <i class="ti ti-download" style="font-size:12px" aria-hidden="true"></i> Download SVG
+          </button>
+        </div>
+        <div style="padding:16px;display:flex;justify-content:center;background:repeating-conic-gradient(rgba(255,255,255,0.02) 0% 25%, transparent 0% 50%) 0 0/20px 20px" id="svg-preview">
+          ${svg}
+        </div>
+      </div>
+
+      <!-- Brief -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.25rem;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:14px">
+          <i class="ti ti-file-text" style="color:var(--accent2)" aria-hidden="true"></i>
+          <span style="font-size:14px;font-weight:600;font-family:var(--font-display)">Creative Brief</span>
+        </div>
+
+        <div style="padding:12px;background:linear-gradient(135deg,rgba(124,106,247,0.08),rgba(79,209,197,0.05));border-radius:var(--r);border:1px solid rgba(124,106,247,0.2);margin-bottom:14px">
+          <p style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Concept</p>
+          <p style="font-size:13px;color:var(--t1);line-height:1.65">${brief.concept||""}</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div style="padding:11px;background:var(--bg-surface);border-radius:var(--r)">
+            <p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Headline</p>
+            <p style="font-size:14px;font-weight:600;color:var(--t1);line-height:1.4">"${brief.headline||""}"</p>
+          </div>
+          <div style="padding:11px;background:var(--bg-surface);border-radius:var(--r)">
+            <p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">CTA</p>
+            <div style="display:inline-block;padding:6px 14px;background:linear-gradient(135deg,var(--accent),#5b4fd4);border-radius:var(--r);font-size:13px;font-weight:600;color:#fff">${brief.cta||""}</div>
+          </div>
+        </div>
+
+        ${brief.subheadline?`<div style="margin-bottom:10px"><p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Subheadline</p><p style="font-size:13px;color:var(--t2)">${brief.subheadline}</p></div>`:""}
+        ${brief.bodyText?`<div style="margin-bottom:10px"><p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Body Copy</p><p style="font-size:13px;color:var(--t2);line-height:1.6">${brief.bodyText}</p></div>`:""}
+
+        <div style="margin-bottom:14px;padding:11px;background:var(--bg-surface);border-radius:var(--r)">
+          <p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Visual Direction</p>
+          <p style="font-size:12px;color:var(--t2);line-height:1.6">${brief.visualDirection||""}</p>
+        </div>
+
+        <div style="padding:12px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:var(--r)">
+          <p style="font-size:11px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">⚡ Why This Will Outperform the Original</p>
+          <p style="font-size:13px;color:var(--t1);line-height:1.65">${brief.whyItWillPerformBetter||""}</p>
+        </div>
+
+        <div style="margin-top:12px;padding:10px 12px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:var(--r)">
+          <p style="font-size:11px;font-weight:600;color:var(--yellow);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">🔑 Key Change</p>
+          <p style="font-size:12px;color:var(--t2)">${brief.keyChange||""}</p>
+        </div>
+      </div>
+
+      <div style="padding:12px 14px;background:var(--bg-surface);border-radius:var(--r);border:1px solid var(--border);font-size:12px;color:var(--t3);line-height:1.6">
+        💡 <strong style="color:var(--t2)">Next step:</strong> Share this brief with your designer or use the SVG mockup as a visual reference for production. The mockup shows layout and copy — your designer will replace placeholder elements with actual brand assets.
+      </div>`;
+
+    // Store SVG for download
+    window._lastGeneratedSVG=svg;
+
+  }catch(e){
+    out.innerHTML=`<div class="error-box"><i class="ti ti-alert-circle" aria-hidden="true"></i>Generation failed: ${e.message}</div>`;
+  }
+  btn.innerHTML=`<i class="ti ti-wand" aria-hidden="true"></i> Generate Creative Brief + Mockup`;
+  btn.disabled=false;
+}
+
+function downloadSVG(){
+  if(!window._lastGeneratedSVG)return;
+  const blob=new Blob([window._lastGeneratedSVG],{type:"image/svg+xml"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="improved-creative.svg";a.click();
+}
 async function askFQ(){
   const q=document.getElementById("fq").value.trim();if(!q||!analysis)return;
   const btn=document.getElementById("fsend");btn.disabled=true;btn.innerHTML=`<i class="ti ti-loader-2 spin" style="font-size:14px" aria-hidden="true"></i>`;
