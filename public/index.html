@@ -251,6 +251,48 @@ textarea::placeholder{color:var(--t3)}
 .ind-divider{width:1px;height:50px;background:var(--border);flex-shrink:0}
 
 @media(max-width:700px){.main-grid{grid-template-columns:1fr!important}.benchmark-grid{grid-template-columns:1fr}}
+
+/* Mode toggle */
+.mode-toggle{display:flex;gap:6px;margin-bottom:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:5px}
+.mode-btn{flex:1;padding:8px 16px;border-radius:var(--r);border:none;background:transparent;color:var(--t2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-display)}
+.mode-btn.active{background:linear-gradient(135deg,rgba(124,106,247,0.2),rgba(124,106,247,0.1));color:var(--accent)}
+.mode-btn:hover:not(.active){color:var(--t1);background:var(--bg-surface)}
+
+/* Bulk upload */
+.bulk-upload-zone{border:1.5px dashed var(--border-md);border-radius:var(--rl);padding:2.5rem;text-align:center;cursor:pointer;background:var(--bg-surface);transition:all .2s;position:relative;overflow:hidden;margin-bottom:16px}
+.bulk-upload-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 120%,rgba(124,106,247,0.1),transparent 70%);pointer-events:none}
+.bulk-upload-zone:hover{border-color:var(--accent);background:rgba(124,106,247,0.06)}
+.bulk-upload-zone i{font-size:36px;color:var(--accent);display:block;margin-bottom:10px;opacity:0.7}
+.bulk-file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-bottom:14px}
+.bulk-file-card{position:relative;border-radius:var(--r);overflow:hidden;background:var(--bg-surface);border:1px solid var(--border);cursor:pointer;transition:all .15s}
+.bulk-file-card:hover{border-color:var(--border-md)}
+.bulk-file-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(124,106,247,0.2)}
+.bulk-file-card img{width:100%;height:80px;object-fit:cover;display:block}
+.bulk-file-card .bulk-file-name{font-size:9px;color:var(--t3);padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bulk-file-card .bulk-file-status{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.bulk-file-card .bulk-remove{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:99px;background:rgba(248,113,113,0.85);color:#fff;border:none;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.bulk-file-card:hover .bulk-remove{opacity:1}
+
+/* Bulk results */
+.bulk-results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.bulk-stat{text-align:center;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl)}
+.bulk-stat-val{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1}
+.bulk-stat-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;margin-top:3px}
+.bulk-table{width:100%;border-collapse:collapse;font-size:12px}
+.bulk-table th{text-align:left;padding:8px 12px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border);background:var(--bg-surface)}
+.bulk-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.bulk-table tr:hover td{background:rgba(255,255,255,0.02)}
+.bulk-table tr:last-child td{border-bottom:none}
+.bulk-rank{width:24px;height:24px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.bulk-thumb{width:40px;height:40px;border-radius:var(--r);object-fit:cover;border:1px solid var(--border)}
+.bulk-score-pill{display:inline-flex;align-items:center;justify-content:center;width:36px;height:24px;border-radius:99px;font-size:11px;font-weight:700}
+.bulk-mini-bar{height:3px;border-radius:99px;background:var(--bg-surface2);margin-top:3px;overflow:hidden}
+.bulk-mini-bar-fill{height:100%;border-radius:99px;transition:width 1s ease}
+.bulk-winner-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(251,191,36,0.15);color:var(--yellow);letter-spacing:0.04em}
+.bulk-progress-bar{height:4px;background:var(--bg-surface2);border-radius:99px;overflow:hidden;margin-top:6px}
+.bulk-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .3s ease}
+.expand-btn{padding:4px 10px;border-radius:var(--r);border:1px solid var(--border-md);background:transparent;color:var(--t2);font-size:11px;cursor:pointer;transition:all .15s}
+.expand-btn:hover{background:var(--bg-surface);color:var(--t1)}
 </style>
 </head>
 <body>
@@ -282,6 +324,19 @@ textarea::placeholder{color:var(--t3)}
     <p class="apikey-hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> — stored only in localStorage, never sent anywhere except Anthropic</p>
   </div>
 
+  <!-- Mode Toggle -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="mode-single" onclick="switchMode('single')">
+      <i class="ti ti-photo" aria-hidden="true"></i> Single Creative
+    </button>
+    <button class="mode-btn" id="mode-bulk" onclick="switchMode('bulk')">
+      <i class="ti ti-stack-2" aria-hidden="true"></i> Bulk Analysis
+      <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:rgba(79,209,197,0.15);color:var(--accent2);margin-left:2px">NEW</span>
+    </button>
+  </div>
+
+  <!-- Single mode -->
+  <div id="single-mode">
   <div class="main-grid single" id="main-grid">
     <div id="left-panel">
 
@@ -319,6 +374,55 @@ textarea::placeholder{color:var(--t3)}
       </button>
     </div>
   </div>
+  </div><!-- end single-mode -->
+
+  <!-- Bulk mode -->
+  <div id="bulk-mode" style="display:none">
+    <div style="max-width:900px">
+
+      <!-- Bulk settings row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="card">
+          <div class="card-label"><i class="ti ti-device-desktop" aria-hidden="true"></i><span>Platform</span></div>
+          <div class="platform-grid" id="bulk-platform-grid"></div>
+        </div>
+        <div class="card">
+          <div class="card-label"><i class="ti ti-text-caption" aria-hidden="true"></i><span>Campaign Context <span style="font-weight:400;color:var(--t3)">(applies to all)</span></span></div>
+          <textarea id="bulk-context" placeholder="e.g. TOF Meta campaign, targeting 25-45 urban, wellness niche..." style="min-height:52px"></textarea>
+        </div>
+      </div>
+
+      <!-- Bulk upload zone -->
+      <div class="bulk-upload-zone" id="bulk-upload-zone" onclick="document.getElementById('bulk-file-input').click()">
+        <i class="ti ti-stack-2" aria-hidden="true"></i>
+        <p style="font-size:15px;font-weight:600;color:var(--t1);margin-bottom:4px">Drop multiple creatives here</p>
+        <p style="font-size:13px;color:var(--t2);margin-bottom:6px">or click to browse — upload up to 10 images at once</p>
+        <small style="font-size:11px;color:var(--t3)">JPG, PNG, GIF supported</small>
+      </div>
+      <input type="file" id="bulk-file-input" accept="image/*" multiple style="display:none"/>
+
+      <!-- File grid preview -->
+      <div id="bulk-file-grid" class="bulk-file-grid" style="display:none"></div>
+
+      <!-- Analyze all button -->
+      <button id="bulk-analyze-btn" onclick="runBulkAnalysis()" style="display:none;width:100%;padding:13px;border-radius:var(--rl);border:none;background:linear-gradient(135deg,var(--accent),#5b4fd4);color:#fff;font-size:14px;font-weight:700;font-family:var(--font-display);cursor:pointer;align-items:center;justify-content:center;gap:8px;transition:all .2s;letter-spacing:0.02em;margin-bottom:20px">
+        <i class="ti ti-sparkles" aria-hidden="true"></i> Analyze All Creatives
+      </button>
+
+      <!-- Progress -->
+      <div id="bulk-progress" style="display:none;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--t2)" id="bulk-progress-label">Analyzing...</span>
+          <span style="font-size:12px;color:var(--accent)" id="bulk-progress-count">0/0</span>
+        </div>
+        <div class="bulk-progress-bar"><div class="bulk-progress-fill" id="bulk-progress-fill" style="width:0%"></div></div>
+      </div>
+
+      <!-- Results -->
+      <div id="bulk-results"></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -877,7 +981,302 @@ function switchTab(id,pc,pl,bm){
   }
 }
 
-// Generate Creative
+// =================== BULK ANALYSIS ===================
+let bulkFiles=[];
+let bulkResults=[];
+let bulkPlat="meta";
+
+// Mode switch
+function switchMode(mode){
+  document.getElementById("single-mode").style.display=mode==="single"?"block":"none";
+  document.getElementById("bulk-mode").style.display=mode==="bulk"?"block":"none";
+  document.getElementById("mode-single").className="mode-btn"+(mode==="single"?" active":"");
+  document.getElementById("mode-bulk").className="mode-btn"+(mode==="bulk"?" active":"");
+}
+
+// Bulk platform grid
+(function initBulkPlatform(){
+  const pg=document.getElementById("bulk-platform-grid");
+  if(!pg)return;
+  PLATFORMS.forEach(p=>{
+    const b=document.createElement("button");
+    b.className="platform-btn"+(p.id==="meta"?" active":"");
+    b.innerHTML=`<i class="ti ${p.icon}" aria-hidden="true"></i>${p.label}`;
+    if(p.id==="meta"){b.style.background=p.color+"22";b.style.color=p.color;b.style.borderColor=p.color+"55";}
+    b.onclick=()=>{
+      bulkPlat=p.id;
+      pg.querySelectorAll(".platform-btn").forEach(x=>{x.className="platform-btn";x.style.background=x.style.color=x.style.borderColor="";});
+      b.className="platform-btn active";b.style.background=p.color+"22";b.style.color=p.color;b.style.borderColor=p.color+"55";
+    };
+    pg.appendChild(b);
+  });
+})();
+
+// Bulk file input
+const bulkZone=document.getElementById("bulk-upload-zone");
+const bulkInput=document.getElementById("bulk-file-input");
+bulkZone.addEventListener("dragover",e=>{e.preventDefault();bulkZone.style.borderColor="var(--accent)";});
+bulkZone.addEventListener("dragleave",()=>{bulkZone.style.borderColor="";});
+bulkZone.addEventListener("drop",e=>{e.preventDefault();addBulkFiles(Array.from(e.dataTransfer.files));});
+bulkInput.addEventListener("change",e=>addBulkFiles(Array.from(e.target.files)));
+
+function addBulkFiles(newFiles){
+  const imgs=newFiles.filter(f=>f.type.startsWith("image/"));
+  const combined=[...bulkFiles,...imgs].slice(0,10);
+  bulkFiles=combined;
+  renderBulkFileGrid();
+}
+
+function removeBulkFile(idx){
+  bulkFiles.splice(idx,1);
+  renderBulkFileGrid();
+}
+
+function renderBulkFileGrid(){
+  const grid=document.getElementById("bulk-file-grid");
+  const btn=document.getElementById("bulk-analyze-btn");
+  if(bulkFiles.length===0){grid.style.display="none";btn.style.display="none";return;}
+  grid.style.display="grid";
+  btn.style.display="flex";
+  grid.innerHTML=bulkFiles.map((f,i)=>`
+    <div class="bulk-file-card" id="bulk-card-${i}">
+      <img src="${URL.createObjectURL(f)}" alt="${f.name}"/>
+      <button class="bulk-remove" onclick="removeBulkFile(${i})"><i class="ti ti-x" aria-hidden="true"></i></button>
+      <div class="bulk-file-name">${f.name}</div>
+      <div class="bulk-file-status" id="bulk-status-${i}"></div>
+    </div>`).join("")+
+    (bulkFiles.length<10?`<div style="border:1.5px dashed var(--border-md);border-radius:var(--r);display:flex;align-items:center;justify-content:center;cursor:pointer;min-height:80px;background:var(--bg-surface);transition:all .15s" onclick="document.getElementById('bulk-file-input').click()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border-md)'">
+      <i class="ti ti-plus" style="font-size:20px;color:var(--t3)" aria-hidden="true"></i>
+    </div>`:"");
+}
+
+async function runBulkAnalysis(){
+  if(!bulkFiles.length)return;
+  const k=getKey();
+  if(!k){document.getElementById("apikey-error").style.display="block";document.getElementById("apikey-error").textContent="Please connect your API key first.";return;}
+
+  const btn=document.getElementById("bulk-analyze-btn");
+  btn.innerHTML=`<i class="ti ti-loader-2 spin" aria-hidden="true"></i> Analyzing ${bulkFiles.length} creatives…`;
+  btn.disabled=true;
+
+  const progress=document.getElementById("bulk-progress");
+  const progressLabel=document.getElementById("bulk-progress-label");
+  const progressCount=document.getElementById("bulk-progress-count");
+  const progressFill=document.getElementById("bulk-progress-fill");
+  progress.style.display="block";
+  document.getElementById("bulk-results").innerHTML="";
+  bulkResults=[];
+
+  const ctx=document.getElementById("bulk-context").value;
+  const pl=PLATFORMS.find(p=>p.id===bulkPlat)?.label||bulkPlat;
+
+  const shortSys=`You are an expert ad creative analyst. Respond ONLY with valid JSON (no markdown, no backticks):
+{"overallScore":<1-10>,"headline":"<one verdict sentence>","scores":{"attention":<1-10>,"clarity":<1-10>,"emotion":<1-10>,"brandAlignment":<1-10>,"cta":<1-10>,"platformFit":<1-10>},"topStrength":"<single biggest strength>","topWeakness":"<single biggest weakness>","quickWin":"<single highest ROI fix>","ctaText":"<detected CTA>","audienceFit":"<who this resonates with in 10 words>"}`;
+
+  for(let i=0;i<bulkFiles.length;i++){
+    const f=bulkFiles[i];
+    const card=document.getElementById(`bulk-card-${i}`);
+    const statusEl=document.getElementById(`bulk-status-${i}`);
+    if(card)card.style.borderColor="var(--accent)";
+    if(statusEl)statusEl.innerHTML=`<div style="background:rgba(124,106,247,0.9);border-radius:99px;padding:2px 4px;font-size:9px;color:#fff">...</div>`;
+
+    progressLabel.textContent=`Analyzing ${f.name}…`;
+    progressCount.textContent=`${i}/${bulkFiles.length}`;
+    progressFill.style.width=`${(i/bulkFiles.length)*100}%`;
+
+    try{
+      const b64=await toB64(f);
+      const r=await fetch("/api/analyze",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-5",max_tokens:1000,system:shortSys,
+          messages:[{role:"user",content:[
+            {type:"image",source:{type:"base64",media_type:f.type||"image/jpeg",data:b64}},
+            {type:"text",text:`Analyze this ${pl} ad. ${ctx?"Context: "+ctx:""}`}
+          ]}]
+        })
+      });
+      const d=await r.json();
+      if(d.error)throw new Error(d.error.message);
+      const txt=d.content?.map(x=>x.text||"").join("")||"";
+      const res=JSON.parse(txt.replace(/```json|```/g,"").trim());
+      bulkResults.push({file:f,url:URL.createObjectURL(f),name:f.name,result:res,error:null});
+      if(card)card.style.borderColor="var(--green)";
+      if(statusEl)statusEl.innerHTML=`<div style="background:rgba(52,211,153,0.9);border-radius:99px;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">✓</div>`;
+    }catch(e){
+      bulkResults.push({file:f,url:URL.createObjectURL(f),name:f.name,result:null,error:e.message});
+      if(card)card.style.borderColor="var(--red)";
+      if(statusEl)statusEl.innerHTML=`<div style="background:rgba(248,113,113,0.9);border-radius:99px;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">✗</div>`;
+    }
+  }
+
+  progressCount.textContent=`${bulkFiles.length}/${bulkFiles.length}`;
+  progressFill.style.width="100%";
+  progressLabel.textContent="Analysis complete!";
+
+  renderBulkResults();
+  btn.innerHTML=`<i class="ti ti-sparkles" aria-hidden="true"></i> Analyze All Creatives`;
+  btn.disabled=false;
+}
+
+function renderBulkResults(){
+  const container=document.getElementById("bulk-results");
+  const valid=bulkResults.filter(r=>r.result);
+  if(!valid.length){container.innerHTML=`<div class="error-box"><i class="ti ti-alert-circle" aria-hidden="true"></i> No creatives analyzed successfully.</div>`;return;}
+
+  const sorted=[...valid].sort((a,b)=>(b.result.overallScore||0)-(a.result.overallScore||0));
+  const avg=(valid.reduce((s,r)=>s+(r.result.overallScore||0),0)/valid.length).toFixed(1);
+  const best=sorted[0];
+  const worst=sorted[sorted.length-1];
+  const pc=PLATFORMS.find(p=>p.id===bulkPlat)?.color||"#7c6af7";
+
+  container.innerHTML=`
+    <!-- Summary stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px" class="fade">
+      <div class="bulk-stat">
+        <div class="bulk-stat-val" style="color:var(--accent)">${valid.length}</div>
+        <div class="bulk-stat-label">Analyzed</div>
+      </div>
+      <div class="bulk-stat">
+        <div class="bulk-stat-val" style="color:var(--yellow)">${avg}</div>
+        <div class="bulk-stat-label">Avg Score</div>
+      </div>
+      <div class="bulk-stat">
+        <div class="bulk-stat-val" style="color:var(--green)">${best.result.overallScore}/10</div>
+        <div class="bulk-stat-label">Best Score</div>
+      </div>
+      <div class="bulk-stat">
+        <div class="bulk-stat-val" style="color:var(--red)">${worst.result.overallScore}/10</div>
+        <div class="bulk-stat-label">Lowest Score</div>
+      </div>
+    </div>
+
+    <!-- Winner highlight -->
+    <div style="background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(124,106,247,0.06));border:1px solid rgba(251,191,36,0.25);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:16px;display:flex;gap:14px;align-items:center" class="fade">
+      <img src="${best.url}" style="width:60px;height:60px;object-fit:cover;border-radius:var(--r);border:2px solid var(--yellow);flex-shrink:0"/>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:16px">🏆</span>
+          <span style="font-size:13px;font-weight:700;color:var(--yellow)">Top Performing Creative</span>
+          <span style="font-size:18px;font-weight:800;color:var(--yellow);font-family:var(--font-display);margin-left:auto">${best.result.overallScore}<span style="font-size:12px;color:var(--t2)">/10</span></span>
+        </div>
+        <p style="font-size:12px;color:var(--t2);margin-bottom:6px;line-height:1.5">${best.result.headline}</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="tag tag-success" style="font-size:10px">💪 ${best.result.topStrength}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison table -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:16px" class="fade">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+        <i class="ti ti-table" style="color:var(--accent)" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:600;font-family:var(--font-display)">Creative Comparison</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--t3)">Sorted by score</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="bulk-table">
+          <thead>
+            <tr>
+              <th style="width:36px">#</th>
+              <th>Creative</th>
+              <th>Score</th>
+              <th>Attention</th>
+              <th>Clarity</th>
+              <th>Emotion</th>
+              <th>CTA</th>
+              <th>Top Strength</th>
+              <th>Fix This</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map((r,i)=>{
+              const sc=r.result;
+              const rankColor=i===0?"var(--yellow)":i===1?"var(--t2)":i===2?"#cd7f32":"var(--t3)";
+              const rankBg=i===0?"rgba(251,191,36,0.15)":i===1?"rgba(156,163,175,0.1)":i===2?"rgba(205,127,50,0.1)":"var(--bg-surface)";
+              const scoreColor=sc.overallScore>=8?"var(--green)":sc.overallScore>=6?"var(--yellow)":"var(--red)";
+              return `<tr>
+                <td><div class="bulk-rank" style="background:${rankBg};color:${rankColor}">${i+1}</div></td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <img src="${r.url}" class="bulk-thumb" alt="${r.name}"/>
+                    <div>
+                      <div style="font-size:12px;font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name.replace(/\.[^.]+$/,"")}</div>
+                      ${i===0?`<span class="bulk-winner-badge">WINNER</span>`:""}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="bulk-score-pill" style="background:${scoreColor}22;color:${scoreColor}">${sc.overallScore}</span>
+                </td>
+                ${["attention","clarity","emotion","cta"].map(k=>`<td>
+                  <div style="font-size:12px;font-weight:600;color:${(sc.scores?.[k]||0)>=7?"var(--green)":(sc.scores?.[k]||0)>=5?"var(--yellow)":"var(--red)"}">${sc.scores?.[k]||"–"}</div>
+                  <div class="bulk-mini-bar"><div class="bulk-mini-bar-fill" style="width:${(sc.scores?.[k]||0)*10}%;background:${pc}"></div></div>
+                </td>`).join("")}
+                <td style="max-width:140px"><div style="font-size:11px;color:var(--green);line-height:1.4">${sc.topStrength||"–"}</div></td>
+                <td style="max-width:140px"><div style="font-size:11px;color:var(--red);line-height:1.4">${sc.topWeakness||"–"}</div></td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Score dimension comparison chart -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.25rem;margin-bottom:16px" class="fade">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <i class="ti ti-chart-bar" style="color:var(--accent)" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:600;font-family:var(--font-display)">Dimension Breakdown</span>
+      </div>
+      ${["attention","clarity","emotion","brandAlignment","cta","platformFit"].map(k=>{
+        const labels={attention:"Attention",clarity:"Clarity",emotion:"Emotion",brandAlignment:"Brand Align",cta:"CTA",platformFit:"Platform Fit"};
+        const colors={attention:"#60a5fa",clarity:"#34d399",emotion:"#f472b6",brandAlignment:"#a78bfa",cta:"#fbbf24",platformFit:pc};
+        return `<div style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="font-size:11px;color:var(--t2);width:90px;flex-shrink:0">${labels[k]}</span>
+            <div style="flex:1;display:flex;gap:3px;align-items:center">
+              ${sorted.map((r,i)=>{
+                const val=(r.result.scores?.[k]||0);
+                const isWinner=i===0;
+                return `<div title="${r.name}: ${val}/10" style="flex:1;position:relative">
+                  <div style="height:20px;background:${isWinner?colors[k]+"44":colors[k]+"22"};border-radius:4px;border:1px solid ${isWinner?colors[k]+"88":colors[k]+"33"};display:flex;align-items:center;justify-content:center">
+                    <span style="font-size:10px;font-weight:${isWinner?"700":"500"};color:${isWinner?colors[k]:"var(--t2)"}">${val}</span>
+                  </div>
+                </div>`;
+              }).join("")}
+            </div>
+          </div>
+        </div>`;
+      }).join("")}
+      <div style="display:flex;gap:3px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <span style="font-size:10px;color:var(--t3);width:90px;flex-shrink:0">Legend:</span>
+        <div style="flex:1;display:flex;gap:3px">
+          ${sorted.map((r,i)=>`<div style="flex:1;text-align:center;font-size:9px;color:${i===0?"var(--yellow)":"var(--t3)"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.name}">${i+1}. ${r.name.replace(/\.[^.]+$/,"").substring(0,8)}${r.name.length>12?"…":""}</div>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- Individual insights -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.25rem" class="fade">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <i class="ti ti-bolt" style="color:var(--yellow)" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:600;font-family:var(--font-display)">Quick Wins Per Creative</span>
+      </div>
+      ${sorted.map((r,i)=>`
+        <div style="display:flex;gap:10px;padding:10px;background:var(--bg-surface);border-radius:var(--r);margin-bottom:8px;border:1px solid var(--border)">
+          <img src="${r.url}" style="width:36px;height:36px;object-fit:cover;border-radius:var(--r);flex-shrink:0"/>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:600">${r.name.replace(/\.[^.]+$/,"")}</span>
+              <span style="font-size:11px;font-weight:700;color:${r.result.overallScore>=7?"var(--green)":r.result.overallScore>=5?"var(--yellow)":"var(--red)"}">${r.result.overallScore}/10</span>
+            </div>
+            <p style="font-size:12px;color:var(--accent);line-height:1.5"><i class="ti ti-arrow-right" style="font-size:11px" aria-hidden="true"></i> ${r.result.quickWin||"–"}</p>
+          </div>
+        </div>`).join("")}
+    </div>`;
+}
+// =================== END BULK ANALYSIS ===================
 let genOptionVal="improved";
 function selectGenOption(el){
   document.querySelectorAll(".gen-option").forEach(x=>{
