@@ -1070,8 +1070,8 @@ async function runBulkAnalysis(){
   const ctx=document.getElementById("bulk-context").value;
   const pl=PLATFORMS.find(p=>p.id===bulkPlat)?.label||bulkPlat;
 
-  const shortSys=`You are an expert ad creative analyst. Respond ONLY with valid JSON (no markdown, no backticks):
-{"overallScore":<1-10>,"headline":"<one verdict sentence>","scores":{"attention":<1-10>,"clarity":<1-10>,"emotion":<1-10>,"brandAlignment":<1-10>,"cta":<1-10>,"platformFit":<1-10>},"topStrength":"<single biggest strength>","topWeakness":"<single biggest weakness>","quickWin":"<single highest ROI fix>","ctaText":"<detected CTA>","audienceFit":"<who this resonates with in 10 words>"}`;
+  const shortSys=`You are a world-class performance marketing creative strategist. Analyze this ad creative in full detail. Respond ONLY with valid JSON (no markdown, no backticks):
+{"overallScore":<1-10>,"headline":"<one sharp verdict referencing specific visual/copy elements>","scores":{"attention":<1-10>,"clarity":<1-10>,"emotion":<1-10>,"brandAlignment":<1-10>,"cta":<1-10>,"platformFit":<1-10>},"topStrength":"<biggest strength in 10 words>","topWeakness":"<biggest weakness in 10 words>","quickWin":"<single highest ROI fix>","ctaText":"<detected CTA>","audienceFit":"<who this resonates with>","whyWorking":["<specific reason with exact element — e.g. bold 48px headline creates pattern interrupt>","<specific reason>","<specific reason>"],"whyNotWorking":["<specific issue with exact element and why it hurts — e.g. 10px Hindi copy unreadable at scroll speed>","<specific issue>","<specific issue>"],"heatmapInsights":{"eyeFlowPattern":"<detailed eye movement path with specific elements>","topAttentionZones":["<zone with reason>","<zone with reason>"],"lowAttentionZones":["<zone with reason>"],"mobileBehavior":"<how this looks on 375px mobile at scroll speed>"},"copyAnalysis":{"detectedHeadline":"<exact headline text>","detectedCTA":"<exact CTA text>","toneAnalysis":"<emotional/rational/fear/aspiration — is it right for TOF or BOF?>","readability":"Easy|Medium|Hard at scroll speed","strength":"<2 specific sentences on copy quality>","topSuggestion":"<best rewrite suggestion with example copy>"},"abTestIdea":{"test":"<what to test>","variant":"<exact variant description>","hypothesis":"<why it will win>","metric":"CTR|CPC|ROAS|CVR"},"platformTip":"<single most important ${pl}-specific optimization tip>"}`;
 
   for(let i=0;i<bulkFiles.length;i++){
     const f=bulkFiles[i];
@@ -1090,7 +1090,7 @@ async function runBulkAnalysis(){
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},
         body:JSON.stringify({
-          model:"claude-sonnet-4-5",max_tokens:1000,system:shortSys,
+          model:"claude-sonnet-4-5",max_tokens:3000,system:shortSys,
           messages:[{role:"user",content:[
             {type:"image",source:{type:"base64",media_type:f.type||"image/jpeg",data:b64}},
             {type:"text",text:`Analyze this ${pl} ad. ${ctx?"Context: "+ctx:""}`}
@@ -1130,6 +1130,230 @@ function renderBulkResults(){
   const best=sorted[0];
   const worst=sorted[sorted.length-1];
   const pc=PLATFORMS.find(p=>p.id===bulkPlat)?.color||"#7c6af7";
+
+  container.innerHTML=`
+    <!-- Summary stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px" class="fade">
+      <div class="bulk-stat"><div class="bulk-stat-val" style="color:var(--accent)">${valid.length}</div><div class="bulk-stat-label">Analyzed</div></div>
+      <div class="bulk-stat"><div class="bulk-stat-val" style="color:var(--yellow)">${avg}</div><div class="bulk-stat-label">Avg Score</div></div>
+      <div class="bulk-stat"><div class="bulk-stat-val" style="color:var(--green)">${best.result.overallScore}/10</div><div class="bulk-stat-label">Best Score</div></div>
+      <div class="bulk-stat"><div class="bulk-stat-val" style="color:var(--red)">${worst.result.overallScore}/10</div><div class="bulk-stat-label">Lowest Score</div></div>
+    </div>
+
+    <!-- Winner highlight -->
+    <div style="background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(124,106,247,0.06));border:1px solid rgba(251,191,36,0.25);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:16px;display:flex;gap:14px;align-items:center" class="fade">
+      <img src="${best.url}" style="width:64px;height:64px;object-fit:cover;border-radius:var(--r);border:2px solid var(--yellow);flex-shrink:0"/>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:16px">🏆</span>
+          <span style="font-size:13px;font-weight:700;color:var(--yellow)">Top Performing Creative</span>
+          <span style="font-size:22px;font-weight:800;color:var(--yellow);font-family:var(--font-display);margin-left:auto">${best.result.overallScore}<span style="font-size:13px;color:var(--t2)">/10</span></span>
+        </div>
+        <p style="font-size:12px;color:var(--t2);margin-bottom:6px;line-height:1.5">${best.result.headline}</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="tag tag-success" style="font-size:10px">💪 ${best.result.topStrength}</span>
+          ${best.result.audienceFit?`<span class="tag tag-info" style="font-size:10px">👥 ${best.result.audienceFit}</span>`:""}
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison table -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:16px" class="fade">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+        <i class="ti ti-table" style="color:var(--accent)" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:600;font-family:var(--font-display)">Creative Comparison</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--t3)">Sorted by overall score</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="bulk-table">
+          <thead>
+            <tr>
+              <th style="width:36px">#</th>
+              <th>Creative</th>
+              <th>Score</th>
+              <th>Attention</th>
+              <th>Clarity</th>
+              <th>Emotion</th>
+              <th>CTA</th>
+              <th>Top Strength</th>
+              <th>Fix This First</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map((r,i)=>{
+              const sc=r.result;
+              const rankColor=i===0?"var(--yellow)":i===1?"var(--t2)":i===2?"#cd7f32":"var(--t3)";
+              const rankBg=i===0?"rgba(251,191,36,0.15)":i===1?"rgba(156,163,175,0.1)":i===2?"rgba(205,127,50,0.1)":"var(--bg-surface)";
+              const scoreColor=sc.overallScore>=8?"var(--green)":sc.overallScore>=6?"var(--yellow)":"var(--red)";
+              return `<tr style="cursor:pointer" onclick="toggleBulkExpand(${bulkResults.indexOf(r)})">
+                <td><div class="bulk-rank" style="background:${rankBg};color:${rankColor}">${i+1}</div></td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <img src="${r.url}" class="bulk-thumb" alt="${r.name}"/>
+                    <div>
+                      <div style="font-size:12px;font-weight:500;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name.replace(/\.[^.]+$/,"")}</div>
+                      ${i===0?`<span class="bulk-winner-badge">WINNER</span>`:""}
+                    </div>
+                  </div>
+                </td>
+                <td><span class="bulk-score-pill" style="background:${scoreColor}22;color:${scoreColor}">${sc.overallScore}</span></td>
+                ${["attention","clarity","emotion","cta"].map(k=>`<td>
+                  <div style="font-size:12px;font-weight:600;color:${(sc.scores?.[k]||0)>=7?"var(--green)":(sc.scores?.[k]||0)>=5?"var(--yellow)":"var(--red)"}">${sc.scores?.[k]||"–"}</div>
+                  <div class="bulk-mini-bar"><div class="bulk-mini-bar-fill" style="width:${(sc.scores?.[k]||0)*10}%;background:${pc}"></div></div>
+                </td>`).join("")}
+                <td style="max-width:130px"><div style="font-size:11px;color:var(--green);line-height:1.4">${sc.topStrength||"–"}</div></td>
+                <td style="max-width:130px"><div style="font-size:11px;color:var(--red);line-height:1.4">${sc.topWeakness||"–"}</div></td>
+              </tr>
+              <!-- Expanded detail row -->
+              <tr id="bulk-expand-${bulkResults.indexOf(r)}" style="display:none">
+                <td colspan="9" style="padding:0;background:var(--bg-surface)">
+                  ${renderBulkDetailCard(r,pc)}
+                </td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:10px 14px;font-size:11px;color:var(--t3);border-top:1px solid var(--border)">💡 Click any row to expand full analysis — why it works, heatmap, copy breakdown, A/B test idea</div>
+    </div>
+
+    <!-- Dimension comparison chart -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.25rem;margin-bottom:16px" class="fade">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <i class="ti ti-chart-bar" style="color:var(--accent)" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:600;font-family:var(--font-display)">Dimension Breakdown</span>
+      </div>
+      ${["attention","clarity","emotion","brandAlignment","cta","platformFit"].map(k=>{
+        const labels={attention:"Attention",clarity:"Clarity",emotion:"Emotion",brandAlignment:"Brand Align",cta:"CTA",platformFit:"Platform Fit"};
+        const colors={attention:"#60a5fa",clarity:"#34d399",emotion:"#f472b6",brandAlignment:"#a78bfa",cta:"#fbbf24",platformFit:pc};
+        return `<div style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="font-size:11px;color:var(--t2);width:90px;flex-shrink:0">${labels[k]}</span>
+            <div style="flex:1;display:flex;gap:3px;align-items:center">
+              ${sorted.map((r,i)=>{
+                const val=(r.result.scores?.[k]||0);
+                const isWinner=i===0;
+                return `<div title="${r.name}: ${val}/10" style="flex:1">
+                  <div style="height:20px;background:${isWinner?colors[k]+"44":colors[k]+"22"};border-radius:4px;border:1px solid ${isWinner?colors[k]+"88":colors[k]+"33"};display:flex;align-items:center;justify-content:center">
+                    <span style="font-size:10px;font-weight:${isWinner?"700":"500"};color:${isWinner?colors[k]:"var(--t2)"}">${val}</span>
+                  </div>
+                </div>`;
+              }).join("")}
+            </div>
+          </div>
+        </div>`;
+      }).join("")}
+      <div style="display:flex;gap:3px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <span style="font-size:10px;color:var(--t3);width:90px;flex-shrink:0">Legend:</span>
+        <div style="flex:1;display:flex;gap:3px">
+          ${sorted.map((r,i)=>`<div style="flex:1;text-align:center;font-size:9px;color:${i===0?"var(--yellow)":"var(--t3)"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i+1}. ${r.name.replace(/\.[^.]+$/,"").substring(0,8)}…</div>`).join("")}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderBulkDetailCard(r,pc){
+  const res=r.result;
+  const scoreColor=res.overallScore>=8?"var(--green)":res.overallScore>=6?"var(--yellow)":"var(--red)";
+  return `<div style="padding:16px;animation:fadeUp .2s ease">
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:16px;margin-bottom:16px">
+      <div>
+        <img src="${r.url}" style="width:120px;height:120px;object-fit:cover;border-radius:var(--r);border:1px solid var(--border-md)"/>
+        <div style="margin-top:8px;text-align:center">
+          <div style="font-family:var(--font-display);font-size:28px;font-weight:700;color:${scoreColor};line-height:1">${res.overallScore}<span style="font-size:14px;color:var(--t2)">/10</span></div>
+          <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em">Overall</div>
+          <div style="display:flex;gap:3px;margin-top:6px;flex-wrap:wrap;justify-content:center">
+            ${["attention","clarity","emotion","cta","platformFit"].map(k=>{
+              const v=res.scores?.[k]||0;
+              const c=v>=7?"var(--green)":v>=5?"var(--yellow)":"var(--red)";
+              const labels={attention:"Attn",clarity:"Clear",emotion:"Emot",cta:"CTA",platformFit:"Plat"};
+              return `<div style="background:${c}18;border:1px solid ${c}44;border-radius:4px;padding:2px 5px;text-align:center"><div style="font-size:10px;font-weight:700;color:${c}">${v}</div><div style="font-size:8px;color:var(--t3)">${labels[k]}</div></div>`;
+            }).join("")}
+          </div>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:13px;color:var(--t1);line-height:1.55;margin-bottom:12px;font-weight:500">${res.headline}</p>
+
+        <!-- Why Working -->
+        <div style="margin-bottom:12px">
+          <p style="font-size:10px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">✅ Why It's Working</p>
+          ${(res.whyWorking||[]).map(w=>`<div style="display:flex;gap:7px;margin-bottom:6px;align-items:flex-start"><i class="ti ti-check" style="font-size:13px;color:var(--green);margin-top:2px;flex-shrink:0" aria-hidden="true"></i><span style="font-size:12px;color:var(--t1);line-height:1.5">${w}</span></div>`).join("")}
+        </div>
+
+        <!-- Why Not Working -->
+        <div>
+          <p style="font-size:10px;font-weight:600;color:var(--yellow);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">⚠️ Areas for Improvement</p>
+          ${(res.whyNotWorking||[]).map(w=>`<div style="display:flex;gap:7px;margin-bottom:6px;align-items:flex-start"><i class="ti ti-alert-circle" style="font-size:13px;color:var(--yellow);margin-top:2px;flex-shrink:0" aria-hidden="true"></i><span style="font-size:12px;color:var(--t1);line-height:1.5">${w}</span></div>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- Heatmap insights -->
+    ${res.heatmapInsights?`<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      <p style="font-size:10px;font-weight:600;color:#f472b6;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">🔥 Heatmap Insights</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+        <div>
+          <p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Eye Flow Pattern</p>
+          <p style="font-size:12px;color:var(--t2);line-height:1.5">${res.heatmapInsights.eyeFlowPattern||""}</p>
+        </div>
+        <div>
+          <p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">📱 Mobile Behavior</p>
+          <p style="font-size:12px;color:var(--t2);line-height:1.5">${res.heatmapInsights.mobileBehavior||""}</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div>
+          <p style="font-size:10px;font-weight:600;color:var(--green);margin-bottom:4px">High Attention</p>
+          ${(res.heatmapInsights.topAttentionZones||[]).map(z=>`<span style="display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;margin-right:4px;margin-bottom:4px;background:rgba(52,211,153,0.1);color:var(--green)">${z}</span>`).join("")}
+        </div>
+        <div>
+          <p style="font-size:10px;font-weight:600;color:var(--red);margin-bottom:4px">Low Attention</p>
+          ${(res.heatmapInsights.lowAttentionZones||[]).map(z=>`<span style="display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;margin-right:4px;margin-bottom:4px;background:rgba(248,113,113,0.1);color:var(--red)">${z}</span>`).join("")}
+        </div>
+      </div>
+    </div>`:""}
+
+    <!-- Copy + A/B + Platform tip -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      ${res.copyAnalysis?`<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r);padding:11px">
+        <p style="font-size:10px;font-weight:600;color:var(--yellow);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px">📝 Copy Analysis</p>
+        ${res.copyAnalysis.detectedHeadline?`<div style="background:var(--bg-surface);border-left:2px solid var(--accent);padding:6px 8px;border-radius:0 4px 4px 0;font-size:11px;font-style:italic;color:var(--t2);margin-bottom:7px">"${res.copyAnalysis.detectedHeadline}"</div>`:""}
+        <div style="display:flex;gap:4px;margin-bottom:7px;flex-wrap:wrap">
+          ${res.copyAnalysis.readability?`<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:99px;background:${res.copyAnalysis.readability==="Easy"?"rgba(52,211,153,0.1)":res.copyAnalysis.readability==="Hard"?"rgba(248,113,113,0.1)":"rgba(251,191,36,0.1)"};color:${res.copyAnalysis.readability==="Easy"?"var(--green)":res.copyAnalysis.readability==="Hard"?"var(--red)":"var(--yellow)"}">${res.copyAnalysis.readability}</span>`:""}
+          ${res.copyAnalysis.toneAnalysis?`<span style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:99px;background:rgba(96,165,250,0.1);color:var(--blue)">${res.copyAnalysis.toneAnalysis.split("—")[0].split("/")[0].trim()}</span>`:""}
+        </div>
+        ${res.copyAnalysis.topSuggestion?`<p style="font-size:11px;color:var(--t2);line-height:1.5"><span style="color:var(--yellow);font-weight:600">Fix: </span>${res.copyAnalysis.topSuggestion}</p>`:""}
+      </div>`:"<div></div>"}
+
+      ${res.abTestIdea?`<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r);padding:11px">
+        <p style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px">🧪 A/B Test Idea</p>
+        <p style="font-size:11px;font-weight:600;color:var(--t1);margin-bottom:4px">${res.abTestIdea.test||""}</p>
+        <div style="background:rgba(124,106,247,0.08);border-radius:4px;padding:6px 8px;margin-bottom:6px;border:1px solid rgba(124,106,247,0.2)">
+          <p style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:2px">Variant</p>
+          <p style="font-size:11px;color:var(--t2)">${res.abTestIdea.variant||""}</p>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <p style="font-size:10px;color:var(--t3);line-height:1.4;flex:1">${res.abTestIdea.hypothesis||""}</p>
+          ${res.abTestIdea.metric?`<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(79,209,197,0.1);color:var(--accent2);margin-left:6px;flex-shrink:0">${res.abTestIdea.metric}</span>`:""}
+        </div>
+      </div>`:"<div></div>"}
+
+      <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--r);padding:11px">
+        <p style="font-size:10px;font-weight:600;color:${pc};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px">⚡ Quick Win</p>
+        <p style="font-size:12px;color:var(--green);line-height:1.5;margin-bottom:8px"><i class="ti ti-trending-up" style="font-size:11px" aria-hidden="true"></i> ${res.quickWin||""}</p>
+        ${res.platformTip?`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px"><p style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Platform tip</p><p style="font-size:11px;color:var(--t2);line-height:1.5">${res.platformTip}</p></div>`:""}
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleBulkExpand(idx){
+  const row=document.getElementById(`bulk-expand-${idx}`);
+  if(!row)return;
+  const isOpen=row.style.display!=="none";
+  row.style.display=isOpen?"none":"table-row";
+}
 
   container.innerHTML=`
     <!-- Summary stats -->
@@ -1257,27 +1481,7 @@ function renderBulkResults(){
       </div>
     </div>
 
-    <!-- Individual insights -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.25rem" class="fade">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <i class="ti ti-bolt" style="color:var(--yellow)" aria-hidden="true"></i>
-        <span style="font-size:13px;font-weight:600;font-family:var(--font-display)">Quick Wins Per Creative</span>
-      </div>
-      ${sorted.map((r,i)=>`
-        <div style="display:flex;gap:10px;padding:10px;background:var(--bg-surface);border-radius:var(--r);margin-bottom:8px;border:1px solid var(--border)">
-          <img src="${r.url}" style="width:36px;height:36px;object-fit:cover;border-radius:var(--r);flex-shrink:0"/>
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:600">${r.name.replace(/\.[^.]+$/,"")}</span>
-              <span style="font-size:11px;font-weight:700;color:${r.result.overallScore>=7?"var(--green)":r.result.overallScore>=5?"var(--yellow)":"var(--red)"}">${r.result.overallScore}/10</span>
-            </div>
-            <p style="font-size:12px;color:var(--accent);line-height:1.5"><i class="ti ti-arrow-right" style="font-size:11px" aria-hidden="true"></i> ${r.result.quickWin||"–"}</p>
-          </div>
-        </div>`).join("")}
-    </div>`;
-}
 // =================== END BULK ANALYSIS ===================
-let genOptionVal="improved";
 function selectGenOption(el){
   document.querySelectorAll(".gen-option").forEach(x=>{
     x.style.background="var(--bg-surface)";x.style.borderColor="var(--border)";
