@@ -465,16 +465,28 @@ function getKey(){return localStorage.getItem("ca_key")||"";}
 function saveKey(){
   const v=document.getElementById("apikey-input").value.trim();
   const e=document.getElementById("apikey-error");
-  if(!v.startsWith("sk-ant-")){e.style.display="block";return;}
-  e.style.display="none";localStorage.setItem("ca_key",v);
+  if(!v||v.length<10){
+    e.style.display="block";
+    e.textContent="Please enter a valid Anthropic API key (sk-ant-...)";
+    return;
+  }
+  e.style.display="none";
+  localStorage.setItem("ca_key",v);
   document.getElementById("apikey-banner").classList.add("saved");
   document.getElementById("apikey-badge").style.display="inline-block";
+  // Show success feedback
+  const btn=document.querySelector(".apikey-btn");
+  if(btn){btn.innerHTML=`<i class="ti ti-check" aria-hidden="true"></i> Connected!`;btn.style.background="var(--green)";setTimeout(()=>{btn.innerHTML=`<i class="ti ti-plug" aria-hidden="true"></i> Connect`;btn.style.background="";},2000);}
 }
 function toggleKey(){
   keyVis=!keyVis;
   document.getElementById("apikey-input").type=keyVis?"text":"password";
   document.getElementById("eye-icon").className=keyVis?"ti ti-eye-off":"ti ti-eye";
 }
+// Init on DOM ready
+document.addEventListener("DOMContentLoaded", function(){
+
+// API Key init
 (function(){
   const k=getKey();
   if(k){document.getElementById("apikey-input").value=k;document.getElementById("apikey-banner").classList.add("saved");document.getElementById("apikey-badge").style.display="inline-block";}
@@ -490,7 +502,7 @@ PLATFORMS.forEach(p=>{
   if(p.id==="meta"){b.style.background=p.color+"22";b.style.color=p.color;b.style.borderColor=p.color+"55";}
   b.onclick=()=>{
     selPlat=p.id;
-    document.querySelectorAll(".platform-btn").forEach(x=>{x.className="platform-btn";x.style.background=x.style.color=x.style.borderColor="";});
+    document.querySelectorAll("#platform-grid .platform-btn").forEach(x=>{x.className="platform-btn";x.style.background=x.style.color=x.style.borderColor="";});
     b.className="platform-btn active";b.style.background=p.color+"22";b.style.color=p.color;b.style.borderColor=p.color+"55";
   };
   pg.appendChild(b);
@@ -500,17 +512,34 @@ PLATFORMS.forEach(p=>{
 const tg=document.getElementById("type-grid");
 TYPES.forEach(t=>{
   const b=document.createElement("button");b.className="type-btn"+(t.id==="static"?" active":"");b.textContent=t.label;
-  b.onclick=()=>{selType=t.id;document.querySelectorAll(".type-btn").forEach(x=>x.className="type-btn");b.className="type-btn active";};
+  b.onclick=()=>{selType=t.id;document.querySelectorAll("#type-grid .type-btn").forEach(x=>x.className="type-btn");b.className="type-btn active";};
   tg.appendChild(b);
 });
 
 // Upload
 const fi=document.getElementById("file-input");
 const uz=document.getElementById("upload-zone");
-uz.addEventListener("dragover",e=>{e.preventDefault();uz.style.borderColor="var(--accent)";});
-uz.addEventListener("dragleave",()=>{uz.style.borderColor="";});
-uz.addEventListener("drop",e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);});
-fi.addEventListener("change",e=>handleFile(e.target.files[0]));
+if(uz){
+  uz.addEventListener("dragover",e=>{e.preventDefault();uz.style.borderColor="var(--accent)";});
+  uz.addEventListener("dragleave",()=>{uz.style.borderColor="";});
+  uz.addEventListener("drop",e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);});
+}
+if(fi) fi.addEventListener("change",e=>handleFile(e.target.files[0]));
+
+// Bulk platform grid
+initBulkPlatform();
+
+// Bulk file listeners
+const bulkZone=document.getElementById("bulk-upload-zone");
+const bulkInput=document.getElementById("bulk-file-input");
+if(bulkZone){
+  bulkZone.addEventListener("dragover",e=>{e.preventDefault();bulkZone.style.borderColor="var(--accent)";});
+  bulkZone.addEventListener("dragleave",()=>{bulkZone.style.borderColor="";});
+  bulkZone.addEventListener("drop",e=>{e.preventDefault();addBulkFiles(Array.from(e.dataTransfer.files));});
+}
+if(bulkInput) bulkInput.addEventListener("change",e=>addBulkFiles(Array.from(e.target.files)));
+
+}); // end DOMContentLoaded
 
 function handleFile(f){
   if(!f)return;file=f;url=URL.createObjectURL(f);analysis=null;heatmap=false;
@@ -995,7 +1024,7 @@ function switchMode(mode){
 }
 
 // Bulk platform grid
-(function initBulkPlatform(){
+function initBulkPlatform(){
   const pg=document.getElementById("bulk-platform-grid");
   if(!pg)return;
   PLATFORMS.forEach(p=>{
@@ -1010,16 +1039,9 @@ function switchMode(mode){
     };
     pg.appendChild(b);
   });
-})();
+}
 
-// Bulk file input
-const bulkZone=document.getElementById("bulk-upload-zone");
-const bulkInput=document.getElementById("bulk-file-input");
-bulkZone.addEventListener("dragover",e=>{e.preventDefault();bulkZone.style.borderColor="var(--accent)";});
-bulkZone.addEventListener("dragleave",()=>{bulkZone.style.borderColor="";});
-bulkZone.addEventListener("drop",e=>{e.preventDefault();addBulkFiles(Array.from(e.dataTransfer.files));});
-bulkInput.addEventListener("change",e=>addBulkFiles(Array.from(e.target.files)));
-
+// Bulk file input — wired in DOMContentLoaded above
 function addBulkFiles(newFiles){
   const imgs=newFiles.filter(f=>f.type.startsWith("image/"));
   const combined=[...bulkFiles,...imgs].slice(0,10);
