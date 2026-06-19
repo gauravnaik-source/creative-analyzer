@@ -398,28 +398,115 @@ function toggleHeatmap(){
 // ============================================================
 // SINGLE UPLOAD & PREVIEW
 // ============================================================
+let videoFrames=[]; // array of base64 frame data for video analysis
+let isVideoFile=false;
+
 function handleFile(f){
-  if(!f)return;file=f;url=URL.createObjectURL(f);analysis=null;heatmap=false;
+  if(!f)return;file=f;url=URL.createObjectURL(f);analysis=null;heatmap=false;videoFrames=[];
+  isVideoFile=f.type.startsWith("video/");
+  if(isVideoFile){selType="video";document.querySelectorAll("#type-grid .type-btn").forEach(function(x){x.className=x.textContent==="Video / GIF"?"type-btn active":"type-btn";});}
   renderPreview();
-  var btn=document.getElementById("analyze-btn");btn.className="analyze-btn ready";btn.disabled=false;
+  var btn=document.getElementById("analyze-btn");
+  if(isVideoFile){
+    btn.className="analyze-btn disabled";btn.disabled=true;
+    btn.innerHTML='<i class="ti ti-loader-2 spin" aria-hidden="true"></i> Extracting frames...';
+    extractVideoFrames(f).then(function(frames){
+      videoFrames=frames;
+      btn.className="analyze-btn ready";btn.disabled=false;
+      btn.innerHTML='<i class="ti ti-sparkles" aria-hidden="true"></i> Analyze Creative';
+      renderFrameThumbnails();
+    }).catch(function(err){
+      btn.className="analyze-btn ready";btn.disabled=false;
+      btn.innerHTML='<i class="ti ti-sparkles" aria-hidden="true"></i> Analyze Creative';
+      console.error("Frame extraction failed:",err);
+    });
+  }else{
+    btn.className="analyze-btn ready";btn.disabled=false;
+  }
   resetRight();
 }
 
+// Extract N evenly-spaced frames from a video file as base64 JPEGs
+function extractVideoFrames(videoFile,numFrames){
+  numFrames=numFrames||6;
+  return new Promise(function(resolve,reject){
+    var video=document.createElement("video");
+    video.preload="auto";video.muted=true;video.playsInline=true;
+    var objUrl=URL.createObjectURL(videoFile);
+    video.src=objUrl;
+    var frames=[];
+    video.onloadedmetadata=function(){
+      var duration=video.duration;
+      if(!duration||!isFinite(duration)){reject(new Error("Could not read video duration"));return;}
+      var canvas=document.createElement("canvas");
+      var maxW=480;
+      var scale=Math.min(1,maxW/video.videoWidth);
+      canvas.width=Math.round(video.videoWidth*scale);
+      canvas.height=Math.round(video.videoHeight*scale);
+      var ctx=canvas.getContext("2d");
+      // Timestamps biased toward the start (hook matters most for TOF) + spread across video
+      var times=[];
+      for(var i=0;i<numFrames;i++){
+        var t=(i/(numFrames-1))*duration*0.96; // avoid exact end (often black/blank)
+        if(i===0)t=Math.min(0.15,duration*0.05); // hook frame ~0.15s in, not frame 0 (often blank)
+        times.push(t);
+      }
+      var idx=0;
+      function captureNext(){
+        if(idx>=times.length){
+          URL.revokeObjectURL(objUrl);
+          resolve(frames);
+          return;
+        }
+        video.currentTime=times[idx];
+      }
+      video.onseeked=function(){
+        try{
+          ctx.drawImage(video,0,0,canvas.width,canvas.height);
+          var dataUrl=canvas.toDataURL("image/jpeg",0.82);
+          frames.push({time:times[idx],base64:dataUrl.split(",")[1],label:idx===0?"Hook (0-1s)":idx===times.length-1?"End frame":"t="+times[idx].toFixed(1)+"s"});
+        }catch(e){/* skip frame on error */}
+        idx++;
+        captureNext();
+      };
+      captureNext();
+    };
+    video.onerror=function(){reject(new Error("Failed to load video"));};
+  });
+}
+
+function renderFrameThumbnails(){
+  var wrap=document.getElementById("preview-wrap");
+  if(!wrap||!videoFrames.length)return;
+  var existing=document.getElementById("frame-thumbs");
+  if(existing)existing.remove();
+  var thumbsHtml='<div id="frame-thumbs" style="display:flex;gap:5px;margin-top:8px;overflow-x:auto;padding-bottom:2px">'+
+    videoFrames.map(function(fr,i){return '<div style="flex-shrink:0;text-align:center"><img src="data:image/jpeg;base64,'+fr.base64+'" style="width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid var(--border-md)"/><div style="font-size:8px;color:var(--t3);margin-top:2px;width:54px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+fr.label+'</div></div>';}).join("")+
+    '</div>'+
+    '<p style="font-size:10px;color:var(--accent2);margin-top:6px;display:flex;align-items:center;gap:4px"><i class="ti ti-check" style="font-size:11px" aria-hidden="true"></i> '+videoFrames.length+' frames extracted &mdash; AI will analyze hook, mid-roll & end frame</p>';
+  wrap.insertAdjacentHTML("afterend",thumbsHtml);
+}
+
 function renderPreview(){
+  var mediaTag=isVideoFile
+    ?'<video id="preview-img" src="'+url+'" controls style="width:100%;display:block;border-radius:var(--rl);max-height:260px;background:var(--bg-surface)"></video>'
+    :'<img id="preview-img" src="'+url+'" alt="Creative"/>';
   document.getElementById("upload-area").innerHTML=
     '<div class="preview-wrap" id="preview-wrap">'+
-    '<img id="preview-img" src="'+url+'" alt="Creative"/>'+
-    '<canvas id="heatmap-canvas"></canvas>'+
+    mediaTag+
+    (isVideoFile?'':'<canvas id="heatmap-canvas"></canvas>')+
     '<div class="preview-actions">'+
-    '<button class="preview-btn" id="hmap-btn" onclick="toggleHeatmap()"><i class="ti ti-flame" aria-hidden="true"></i> Heatmap</button>'+
+    (isVideoFile?'':'<button class="preview-btn" id="hmap-btn" onclick="toggleHeatmap()"><i class="ti ti-flame" aria-hidden="true"></i> Heatmap</button>')+
     '<button class="preview-btn" onclick="clearFile()"><i class="ti ti-x" aria-hidden="true"></i></button>'+
     '</div></div>';
-  var img=document.getElementById("preview-img");
-  img.onload=function(){imgW=img.offsetWidth||img.naturalWidth;imgH=img.offsetHeight||img.naturalHeight;var c=document.getElementById("heatmap-canvas");if(c){c.width=imgW;c.height=imgH;}};
+  if(!isVideoFile){
+    var img=document.getElementById("preview-img");
+    img.onload=function(){imgW=img.offsetWidth||img.naturalWidth;imgH=img.offsetHeight||img.naturalHeight;var c=document.getElementById("heatmap-canvas");if(c){c.width=imgW;c.height=imgH;}};
+  }
 }
 
 function clearFile(){
-  file=null;url=null;analysis=null;heatmap=false;
+  file=null;url=null;analysis=null;heatmap=false;videoFrames=[];isVideoFile=false;
   document.getElementById("upload-area").innerHTML=
     '<div class="upload-zone" id="upload-zone" onclick="document.getElementById(\'file-input\').click()">'+
     '<i class="ti ti-upload" style="font-size:28px;color:var(--t3);display:block;margin-bottom:8px" aria-hidden="true"></i>'+
@@ -454,15 +541,31 @@ async function runAnalysis(){
   var pl=PLATFORMS.find(function(p){return p.id===selPlat;});
   var plLabel=pl?pl.label:selPlat;
   var ctx=document.getElementById("context-input").value;
-  var isVid=selType==="video"||file.type.startsWith("video/");
+  var isVid=isVideoFile;
 
-  var sys='You are a world-class performance marketing creative strategist with 15+ years experience. Give brutally honest, hyper-specific, actionable analysis. Reference SPECIFIC visual elements, copy phrases, and design choices you can actually see. Respond ONLY with valid JSON (no markdown, no backticks):\n{"overallScore":<1-10>,"headline":"<specific verdict referencing actual elements>","scores":{"attention":<1-10>,"clarity":<1-10>,"emotion":<1-10>,"brandAlignment":<1-10>,"cta":<1-10>,"platformFit":<1-10>},"scoreRationale":{"attention":"<2 sentences why — reference specific visuals>","clarity":"<2 sentences — reference actual copy>","emotion":"<2 sentences on emotional pull>","brandAlignment":"<2 sentences on brand consistency>","cta":"<2 sentences on CTA — exact text and placement>","platformFit":"<2 sentences on '+plLabel+' fit>"},"whyWorking":["<specific reason with exact element>","<specific reason>","<specific reason>","<specific reason>"],"whyNotWorking":["<specific issue with exact element and why it hurts performance>","<specific issue>","<specific issue>"],"quickWins":[{"action":"<specific change>","expectedImpact":"<metric improvement>","effort":"low|medium"},{"action":"<specific change>","expectedImpact":"<metric>","effort":"low|medium"},{"action":"<specific change>","expectedImpact":"<metric>","effort":"low|medium"}],"elements":[{"name":"<name>","icon":"ti-<tabler>","desc":"<specific performance impact>","impact":"high|medium|low","recommendation":"<specific action to improve>"}],"heatmapInsights":{"topAttentionZones":["<zone with reason>","<zone with reason>"],"lowAttentionZones":["<zone with reason>"],"eyeFlowPattern":"<detailed eye movement with specific elements>","mobileBehavior":"<how this looks on 375px mobile at scroll speed>"},"audienceResonance":{"likelyAudience":"<specific demographic with psychographic detail>","doesNotResonate":"<who this will NOT work for and why>","emotionalTriggers":["<specific trigger>","<specific trigger>","<specific trigger>"],"psychologicalPrinciples":["<principle with how it applies specifically>","<principle>"]},"platformOptimization":{"fitScore":<1-10>,"platformSpecificTips":["<specific '+plLabel+' tip>","<specific tip>","<specific tip>"],"formatRecommendation":"<exact format with dimensions>","bestPlacement":"<placement and why>","worstPlacement":"<avoid this placement and why>"},"copyAnalysis":{"headline":"<exact headline text>","bodyText":"<exact body copy>","ctaText":"<exact CTA text>","toneAnalysis":"<tone and is it right for TOF vs BOF>","readabilityScore":"Easy|Medium|Hard","strength":"<specific 2-3 sentence assessment>","suggestions":["<specific rewrite with example copy>","<specific suggestion>","<specific suggestion>"]},"abTestIdeas":[{"test":"<what to test>","control":"<current>","variant":"<exact variant>","hypothesis":"<why it wins>","primaryMetric":"CTR|CPC|ROAS|CVR"},{"test":"<what>","control":"<current>","variant":"<variant>","hypothesis":"<why>","primaryMetric":"CTR|CPC|ROAS|CVR"},{"test":"<what>","control":"<current>","variant":"<variant>","hypothesis":"<why>","primaryMetric":"CTR|CPC|ROAS|CVR"}],"competitiveIntelligence":{"industryContext":"<2-3 sentences comparing to typical '+plLabel+' ads in this niche>","topPerformerDifferences":[{"rank":1,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable with example>","impactLevel":"high"},{"rank":2,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"high"},{"rank":3,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"medium"},{"rank":4,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"medium"},{"rank":5,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"medium"}],"benchmarkNotes":"<3-4 sentences on score gaps, what they mean for campaign performance, prioritization>"}}';
+  var sys;
+  if(isVid){
+    sys='You are a world-class performance marketing creative strategist specializing in VIDEO ad analysis with 15+ years experience. You are given multiple sequential frames extracted from a video ad (labeled with timestamps, first frame is the HOOK). Analyze the video as a temporal sequence — how it opens, develops, and closes — not just as static images. Give brutally honest, hyper-specific, actionable analysis referencing what changes between frames, pacing, and hook strength. Respond ONLY with valid JSON (no markdown, no backticks):\n{"overallScore":<1-10>,"headline":"<specific verdict on hook strength and pacing>","scores":{"attention":<1-10 - based on HOOK frame specifically>,"clarity":<1-10>,"emotion":<1-10>,"brandAlignment":<1-10>,"cta":<1-10>,"platformFit":<1-10>},"scoreRationale":{"attention":"<2 sentences on the HOOK frame specifically — does it stop scroll in first 1-2 sec>","clarity":"<2 sentences on message progression across frames>","emotion":"<2 sentences on emotional arc across the video>","brandAlignment":"<2 sentences on brand consistency across frames>","cta":"<2 sentences on CTA — where/when it appears, exact text>","platformFit":"<2 sentences on '+plLabel+' video fit — length, format, captions>"},"whyWorking":["<specific reason referencing what happens in specific frames/timestamps>","<specific reason>","<specific reason>","<specific reason>"],"whyNotWorking":["<specific issue referencing specific frame/timestamp and why it hurts performance>","<specific issue>","<specific issue>"],"quickWins":[{"action":"<specific change>","expectedImpact":"<metric improvement>","effort":"low|medium"},{"action":"<specific change>","expectedImpact":"<metric>","effort":"low|medium"},{"action":"<specific change>","expectedImpact":"<metric>","effort":"low|medium"}],"elements":[{"name":"<name>","icon":"ti-<tabler>","desc":"<specific performance impact, mention timestamp if relevant>","impact":"high|medium|low","recommendation":"<specific action to improve>"}],"heatmapInsights":{"topAttentionZones":["<zone in hook frame with reason>","<zone with reason>"],"lowAttentionZones":["<zone with reason>"],"eyeFlowPattern":"<describe hook-frame eye flow AND how attention likely shifts across the video timeline>","mobileBehavior":"<how the hook and pacing perform on mobile feed at autoplay/muted state>"},"audienceResonance":{"likelyAudience":"<specific demographic with psychographic detail>","doesNotResonate":"<who this will NOT work for and why>","emotionalTriggers":["<specific trigger tied to a moment in the video>","<specific trigger>","<specific trigger>"],"psychologicalPrinciples":["<principle with how it applies across the video arc>","<principle>"]},"platformOptimization":{"fitScore":<1-10>,"platformSpecificTips":["<specific '+plLabel+' video tip — length, captions, sound-off design>","<specific tip>","<specific tip>"],"formatRecommendation":"<exact format/length/aspect ratio recommendation>","bestPlacement":"<placement and why>","worstPlacement":"<avoid this placement and why>"},"copyAnalysis":{"headline":"<exact on-screen text from hook frame>","bodyText":"<on-screen text/captions seen across other frames>","ctaText":"<exact CTA text/frame where it appears>","toneAnalysis":"<tone and is it right for TOF vs BOF>","readabilityScore":"Easy|Medium|Hard","strength":"<specific 2-3 sentence assessment of on-screen text and pacing>","suggestions":["<specific rewrite with example copy>","<specific suggestion>","<specific suggestion>"]},"abTestIdeas":[{"test":"<what to test — e.g. hook frame, pacing, length>","control":"<current>","variant":"<exact variant>","hypothesis":"<why it wins>","primaryMetric":"CTR|CPC|ROAS|CVR|Hook Rate|Hold Rate"},{"test":"<what>","control":"<current>","variant":"<variant>","hypothesis":"<why>","primaryMetric":"CTR|CPC|ROAS|CVR|Hook Rate|Hold Rate"},{"test":"<what>","control":"<current>","variant":"<variant>","hypothesis":"<why>","primaryMetric":"CTR|CPC|ROAS|CVR|Hook Rate|Hold Rate"}],"competitiveIntelligence":{"industryContext":"<2-3 sentences comparing hook style/pacing to typical '+plLabel+' video ads in this niche>","topPerformerDifferences":[{"rank":1,"title":"<what top video performers do differently>","icon":"ti-<tabler>","desc":"<detailed actionable with example>","impactLevel":"high"},{"rank":2,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"high"},{"rank":3,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"medium"},{"rank":4,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"medium"},{"rank":5,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"medium"}],"benchmarkNotes":"<3-4 sentences on score gaps, what they mean for video ad performance specifically, prioritization>"}}';
+  }else{
+    sys='You are a world-class performance marketing creative strategist with 15+ years experience. Give brutally honest, hyper-specific, actionable analysis. Reference SPECIFIC visual elements, copy phrases, and design choices you can actually see. Respond ONLY with valid JSON (no markdown, no backticks):\n{"overallScore":<1-10>,"headline":"<specific verdict referencing actual elements>","scores":{"attention":<1-10>,"clarity":<1-10>,"emotion":<1-10>,"brandAlignment":<1-10>,"cta":<1-10>,"platformFit":<1-10>},"scoreRationale":{"attention":"<2 sentences why — reference specific visuals>","clarity":"<2 sentences — reference actual copy>","emotion":"<2 sentences on emotional pull>","brandAlignment":"<2 sentences on brand consistency>","cta":"<2 sentences on CTA — exact text and placement>","platformFit":"<2 sentences on '+plLabel+' fit>"},"whyWorking":["<specific reason with exact element>","<specific reason>","<specific reason>","<specific reason>"],"whyNotWorking":["<specific issue with exact element and why it hurts performance>","<specific issue>","<specific issue>"],"quickWins":[{"action":"<specific change>","expectedImpact":"<metric improvement>","effort":"low|medium"},{"action":"<specific change>","expectedImpact":"<metric>","effort":"low|medium"},{"action":"<specific change>","expectedImpact":"<metric>","effort":"low|medium"}],"elements":[{"name":"<name>","icon":"ti-<tabler>","desc":"<specific performance impact>","impact":"high|medium|low","recommendation":"<specific action to improve>"}],"heatmapInsights":{"topAttentionZones":["<zone with reason>","<zone with reason>"],"lowAttentionZones":["<zone with reason>"],"eyeFlowPattern":"<detailed eye movement with specific elements>","mobileBehavior":"<how this looks on 375px mobile at scroll speed>"},"audienceResonance":{"likelyAudience":"<specific demographic with psychographic detail>","doesNotResonate":"<who this will NOT work for and why>","emotionalTriggers":["<specific trigger>","<specific trigger>","<specific trigger>"],"psychologicalPrinciples":["<principle with how it applies specifically>","<principle>"]},"platformOptimization":{"fitScore":<1-10>,"platformSpecificTips":["<specific '+plLabel+' tip>","<specific tip>","<specific tip>"],"formatRecommendation":"<exact format with dimensions>","bestPlacement":"<placement and why>","worstPlacement":"<avoid this placement and why>"},"copyAnalysis":{"headline":"<exact headline text>","bodyText":"<exact body copy>","ctaText":"<exact CTA text>","toneAnalysis":"<tone and is it right for TOF vs BOF>","readabilityScore":"Easy|Medium|Hard","strength":"<specific 2-3 sentence assessment>","suggestions":["<specific rewrite with example copy>","<specific suggestion>","<specific suggestion>"]},"abTestIdeas":[{"test":"<what to test>","control":"<current>","variant":"<exact variant>","hypothesis":"<why it wins>","primaryMetric":"CTR|CPC|ROAS|CVR"},{"test":"<what>","control":"<current>","variant":"<variant>","hypothesis":"<why>","primaryMetric":"CTR|CPC|ROAS|CVR"},{"test":"<what>","control":"<current>","variant":"<variant>","hypothesis":"<why>","primaryMetric":"CTR|CPC|ROAS|CVR"}],"competitiveIntelligence":{"industryContext":"<2-3 sentences comparing to typical '+plLabel+' ads in this niche>","topPerformerDifferences":[{"rank":1,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable with example>","impactLevel":"high"},{"rank":2,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"high"},{"rank":3,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"medium"},{"rank":4,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"medium"},{"rank":5,"title":"<what top performers do>","icon":"ti-<tabler>","desc":"<detailed actionable>","impactLevel":"medium"}],"benchmarkNotes":"<3-4 sentences on score gaps, what they mean for campaign performance, prioritization>"}}';
+  }
 
   try{
-    var b64=await toB64(file);
-    var content=isVid
-      ?'Analyze this '+plLabel+' ad ('+selType+'). '+(ctx?'Context: '+ctx:'')
-      :[{type:"image",source:{type:"base64",media_type:file.type||"image/jpeg",data:b64}},{type:"text",text:'Analyze this '+plLabel+' ad ('+selType+'). '+(ctx?'Context: '+ctx:'')}];
+    var content;
+    if(isVid){
+      if(!videoFrames.length){
+        // Frames not ready yet — extract now as a fallback
+        videoFrames=await extractVideoFrames(file);
+      }
+      var frameBlocks=videoFrames.map(function(fr){
+        return {type:"image",source:{type:"base64",media_type:"image/jpeg",data:fr.base64}};
+      });
+      var frameLabels=videoFrames.map(function(fr,i){return "Frame "+(i+1)+" ("+fr.label+")";}).join(", ");
+      content=frameBlocks.concat([{type:"text",text:'These are '+videoFrames.length+' sequential frames extracted from a '+plLabel+' VIDEO ad, in chronological order: '+frameLabels+'. Frame 1 is the hook (first ~1 second). Analyze this as a video sequence — hook strength, pacing, message progression, and how attention likely shifts over time. '+(ctx?'Context: '+ctx:'')}]);
+    }else{
+      var b64=await toB64(file);
+      content=[{type:"image",source:{type:"base64",media_type:file.type||"image/jpeg",data:b64}},{type:"text",text:'Analyze this '+plLabel+' ad ('+selType+'). '+(ctx?'Context: '+ctx:'')}];
+    }
     var r=await fetch("/api/analyze",{
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},
@@ -808,9 +911,16 @@ async function askFQ(){
   var btn=document.getElementById("fsend");btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2 spin" style="font-size:13px" aria-hidden="true"></i>';
   document.getElementById("fa").innerHTML="";
   try{
-    var b64=file?await toB64(file):null;var mt=file?file.type||"image/jpeg":"image/jpeg";
-    var isVid=selType==="video"||(file&&file.type.startsWith("video/"));
-    var content=b64&&!isVid?[{type:"image",source:{type:"base64",media_type:mt,data:b64}},{type:"text",text:"Analysis: "+JSON.stringify(analysis)+". Q: "+q}]:"Analysis: "+JSON.stringify(analysis)+". Q: "+q;
+    var content;
+    if(isVideoFile&&videoFrames.length){
+      var frameBlocks=videoFrames.map(function(fr){return {type:"image",source:{type:"base64",media_type:"image/jpeg",data:fr.base64}};});
+      content=frameBlocks.concat([{type:"text",text:"These are sequential frames from the analyzed video ad. Analysis: "+JSON.stringify(analysis)+". Q: "+q}]);
+    }else if(file&&!isVideoFile){
+      var b64=await toB64(file);
+      content=[{type:"image",source:{type:"base64",media_type:file.type||"image/jpeg",data:b64}},{type:"text",text:"Analysis: "+JSON.stringify(analysis)+". Q: "+q}];
+    }else{
+      content="Analysis: "+JSON.stringify(analysis)+". Q: "+q;
+    }
     var r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":getKey(),"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:4000,messages:[{role:"user",content:content}]})});
     var d=await r.json();
     document.getElementById("fa").innerHTML='<div class="followup-answer">'+d.content.map(function(i){return i.text||"";}).join("")+'</div>';
