@@ -851,6 +851,121 @@ function selGen(el){
   genOptionVal=el.dataset.val;
 }
 
+// ============================================================
+// CREATIVE GENERATION - Design system + template renderer
+// ============================================================
+var DESIGN_PALETTES=[
+  {name:"Midnight Violet",bg:"#0d0d14",bg2:"#16162a",accent:"#7c6af7",accent2:"#4fd1c5",text:"#ffffff",textSub:"#c4c2da",cardBg:"#1c1c30"},
+  {name:"Sunset Coral",bg:"#1a0e0a",bg2:"#2b1410",accent:"#ff6b5b",accent2:"#ffc24b",text:"#ffffff",textSub:"#ffd9d0",cardBg:"#2e1814"},
+  {name:"Forest Fresh",bg:"#0a1a10",bg2:"#0f2818",accent:"#34d399",accent2:"#a3e635",text:"#ffffff",textSub:"#c8f0d8",cardBg:"#123420"},
+  {name:"Ocean Trust",bg:"#081420",bg2:"#0d2236",accent:"#3b9eff",accent2:"#5fe3c4",text:"#ffffff",textSub:"#c2dcf5",cardBg:"#102a40"},
+  {name:"Clean Light",bg:"#faf8f4",bg2:"#ffffff",accent:"#1a1a1a",accent2:"#d4536e",text:"#1a1a1a",textSub:"#5a5a5a",cardBg:"#f0ede5"},
+  {name:"Bold Citrus",bg:"#1a1505",bg2:"#2b220a",accent:"#ffb800",accent2:"#ff5b5b",text:"#ffffff",textSub:"#ffe9b0",cardBg:"#2e2510"}
+];
+
+function escXml(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+// Wrap text into multiple <tspan> lines for SVG, given a rough max chars per line
+function wrapSvgText(text,x,startY,lineHeight,maxChars,anchor){
+  text=text||"";
+  var words=text.split(" "),lines=[],cur="";
+  for(var i=0;i<words.length;i++){
+    var test=cur?cur+" "+words[i]:words[i];
+    if(test.length>maxChars&&cur){lines.push(cur);cur=words[i];}else{cur=test;}
+  }
+  if(cur)lines.push(cur);
+  return lines.map(function(line,i){
+    return '<tspan x="'+x+'" y="'+(startY+i*lineHeight)+'" text-anchor="'+(anchor||"middle")+'">'+escXml(line)+'</tspan>';
+  }).join("");
+}
+
+// Build a polished SVG mockup from structured brief data using a real template
+function buildCreativeSVG(brief,palette,layoutStyle){
+  var W=600,H=600;
+  var p=palette;
+  var headline=brief.headline||"Your Headline Here";
+  var sub=brief.subheadline||"";
+  var body=brief.bodyText||"";
+  var cta=brief.cta||"Shop Now";
+  var badge=brief.badge||"";
+
+  // Layout A: Hero headline top, CTA bottom band, supporting visual block mid (default / "improved")
+  // Layout B: Hook-first - giant headline center, minimal else (for "hook" mode)
+  // Layout C: Split comparison style (for "variant" mode) - before/after feel
+  var headlineLines=wrapSvgText(headline,W/2,0,46,22,"middle");
+  var headlineLineCount=(headline.length>22)?Math.ceil(headline.length/22):1;
+
+  if(layoutStyle==="hook"){
+    return [
+      '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">',
+      '<defs>',
+      '<linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="'+p.bg+'"/><stop offset="100%" stop-color="'+p.bg2+'"/></linearGradient>',
+      '<radialGradient id="glow" cx="50%" cy="30%" r="60%"><stop offset="0%" stop-color="'+p.accent+'" stop-opacity="0.35"/><stop offset="100%" stop-color="'+p.accent+'" stop-opacity="0"/></radialGradient>',
+      '</defs>',
+      '<rect width="'+W+'" height="'+H+'" fill="url(#bgGrad)"/>',
+      '<rect width="'+W+'" height="'+H+'" fill="url(#glow)"/>',
+      badge?'<rect x="'+(W/2-80)+'" y="48" width="160" height="34" rx="17" fill="'+p.accent+'" opacity="0.18" stroke="'+p.accent+'" stroke-width="1.5"/><text x="'+(W/2)+'" y="70" font-size="13" font-weight="700" fill="'+p.accent+'" text-anchor="middle" letter-spacing="1.5">'+escXml(badge.toUpperCase())+'</text>':'',
+      '<text x="'+(W/2)+'" y="'+(H/2-30-headlineLineCount*10)+'" font-size="46" font-weight="800" fill="'+p.text+'" letter-spacing="-1">',
+      wrapSvgText(headline,W/2,H/2-30,52,16,"middle"),
+      '</text>',
+      sub?'<text x="'+(W/2)+'" y="'+(H/2+90)+'" font-size="18" font-weight="400" fill="'+p.textSub+'" text-anchor="middle">'+wrapSvgText(sub,W/2,H/2+90,24,38,"middle")+'</text>':'',
+      '<rect x="'+(W/2-95)+'" y="'+(H-110)+'" width="190" height="56" rx="28" fill="'+p.accent+'"/>',
+      '<text x="'+(W/2)+'" y="'+(H-74)+'" font-size="18" font-weight="700" fill="'+(p.name==="Clean Light"?"#ffffff":p.bg)+'" text-anchor="middle">'+escXml(cta)+'</text>',
+      '<circle cx="60" cy="60" r="3" fill="'+p.accent2+'" opacity="0.6"/>',
+      '<circle cx="540" cy="540" r="4" fill="'+p.accent2+'" opacity="0.4"/>',
+      '<circle cx="520" cy="80" r="2.5" fill="'+p.accent+'" opacity="0.5"/>',
+      '</svg>'
+    ].join("");
+  }
+
+  if(layoutStyle==="variant"){
+    return [
+      '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">',
+      '<defs><linearGradient id="bgGrad2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="'+p.bg2+'"/><stop offset="100%" stop-color="'+p.bg+'"/></linearGradient></defs>',
+      '<rect width="'+W+'" height="'+H+'" fill="url(#bgGrad2)"/>',
+      '<rect x="0" y="0" width="'+W+'" height="8" fill="'+p.accent+'"/>',
+      badge?'<rect x="40" y="40" width="'+(badge.length*8+40)+'" height="32" rx="16" fill="'+p.accent2+'" /><text x="60" y="61" font-size="12" font-weight="700" fill="'+p.bg+'" letter-spacing="1">'+escXml(badge.toUpperCase())+'</text>':'',
+      '<text x="40" y="180" font-size="40" font-weight="800" fill="'+p.text+'" letter-spacing="-0.5">'+wrapSvgText(headline,40,180,46,18,"start")+'</text>',
+      sub?'<text x="40" y="310" font-size="16" fill="'+p.textSub+'">'+wrapSvgText(sub,40,310,22,42,"start")+'</text>':'',
+      '<rect x="40" y="'+(H-170)+'" width="'+(W-80)+'" height="1" fill="'+p.accent+'" opacity="0.25"/>',
+      body?'<text x="40" y="'+(H-130)+'" font-size="13" fill="'+p.textSub+'" opacity="0.8">'+wrapSvgText(body,40,H-130,18,52,"start")+'</text>':'',
+      '<rect x="40" y="'+(H-90)+'" width="200" height="54" rx="10" fill="'+p.accent+'"/>',
+      '<text x="140" y="'+(H-56)+'" font-size="17" font-weight="700" fill="'+(p.name==="Clean Light"?"#ffffff":p.bg)+'" text-anchor="middle">'+escXml(cta)+' &#8594;</text>',
+      '</svg>'
+    ].join("");
+  }
+
+  // default "improved" layout
+  return [
+    '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">',
+    '<defs>',
+    '<linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="'+p.bg+'"/><stop offset="100%" stop-color="'+p.bg2+'"/></linearGradient>',
+    '<linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="'+p.accent+'"/><stop offset="100%" stop-color="'+p.accent2+'"/></linearGradient>',
+    '</defs>',
+    '<rect width="'+W+'" height="'+H+'" fill="url(#bgGrad3)"/>',
+    badge?'<rect x="36" y="36" width="'+(badge.length*7.5+36)+'" height="30" rx="15" fill="'+p.accent+'" opacity="0.85"/><text x="'+(36+(badge.length*7.5+36)/2)+'" y="56" font-size="11" font-weight="700" fill="'+(p.name==="Clean Light"?"#ffffff":p.bg)+'" text-anchor="middle" letter-spacing="1">'+escXml(badge.toUpperCase())+'</text>':'',
+    '<text x="40" y="140" font-size="38" font-weight="800" fill="'+p.text+'" letter-spacing="-0.5">'+wrapSvgText(headline,40,140,44,17,"start")+'</text>',
+    sub?'<text x="40" y="'+(140+(headline.length>17?Math.ceil(headline.length/17):1)*44+30)+'" font-size="16" fill="'+p.textSub+'">'+wrapSvgText(sub,40,140+(headline.length>17?Math.ceil(headline.length/17):1)*44+30,22,40,"start")+'</text>':'',
+    // visual block placeholder representing product/image area
+    '<rect x="40" y="320" width="'+(W-80)+'" height="140" rx="16" fill="'+p.cardBg+'" stroke="'+p.accent+'" stroke-width="1" stroke-opacity="0.3"/>',
+    '<circle cx="100" cy="390" r="28" fill="url(#cardGrad)" opacity="0.85"/>',
+    '<text x="145" y="382" font-size="13" font-weight="700" fill="'+p.text+'">Product / Visual</text>',
+    '<text x="145" y="402" font-size="11" fill="'+p.textSub+'">placeholder &mdash; swap with real asset</text>',
+    body?'<text x="40" y="500" font-size="12" fill="'+p.textSub+'" opacity="0.85">'+wrapSvgText(body,40,500,17,55,"start")+'</text>':'',
+    '<rect x="40" y="'+(H-72)+'" width="190" height="50" rx="25" fill="'+p.accent+'"/>',
+    '<text x="135" y="'+(H-38)+'" font-size="16" font-weight="700" fill="'+(p.name==="Clean Light"?"#ffffff":p.bg)+'" text-anchor="middle">'+escXml(cta)+'</text>',
+    '</svg>'
+  ].join("");
+}
+
+function pickPalette(brief){
+  if(brief.suggestedPalette){
+    var match=DESIGN_PALETTES.find(function(p){return p.name.toLowerCase()===String(brief.suggestedPalette).toLowerCase();});
+    if(match)return match;
+  }
+  return DESIGN_PALETTES[Math.floor(Math.random()*DESIGN_PALETTES.length)];
+}
+
 async function generateCreative(){
   if(!analysis)return;
   var k=getKey();if(!k)return;
@@ -858,26 +973,64 @@ async function generateCreative(){
   var instructions=document.getElementById("gen-instructions")?document.getElementById("gen-instructions").value:"";
   var pl=PLATFORMS.find(function(p){return p.id===selPlat;});var plLabel=pl?pl.label:selPlat;
   btn.innerHTML='<i class="ti ti-loader-2 spin" aria-hidden="true"></i> Generating...';btn.disabled=true;
-  out.innerHTML='<div style="padding:18px;text-align:center;color:var(--t2);font-size:12px"><i class="ti ti-loader-2 spin" style="font-size:22px;display:block;margin-bottom:7px;color:var(--accent)" aria-hidden="true"></i>Generating improved creative...</div>';
-  var vi={"improved":"Create an IMPROVED version fixing: "+(analysis.whyNotWorking||[]).join("; ")+". Apply quick wins: "+(analysis.quickWins||[]).map(function(q){return q.action;}).join("; ")+".",
-    "variant":"Create an A/B TEST VARIANT testing: "+(analysis.abTestIdeas&&typeof analysis.abTestIdeas[0]==="object"?analysis.abTestIdeas[0].variant:"a different headline and CTA")+".",
-    "hook":"Create a TOF HOOK-FIRST version. Lead with strongest scroll-stop hook. Optimize for thumb-stop and first-click on cold audiences."};
-  var prompt="You are a world-class performance marketing creative director. Generate an improved ad creative based on this analysis.\n\nORIGINAL ANALYSIS:\n- Score: "+analysis.overallScore+"/10\n- Headline: "+(analysis.copyAnalysis?analysis.copyAnalysis.headline:"N/A")+"\n- Platform: "+plLabel+"\n- Issues: "+(analysis.whyNotWorking||[]).join("; ")+"\n- Working: "+(analysis.whyWorking||[]).join("; ")+"\n- Audience: "+(analysis.audienceResonance?analysis.audienceResonance.likelyAudience:"N/A")+"\n\nTASK: "+(vi[genOptionVal]||vi.improved)+(instructions?"\nADDITIONAL: "+instructions:"")+"\n\nRespond ONLY with valid JSON (no markdown, no backticks):\n{\"creativeBrief\":{\"concept\":\"<concept>\",\"keyChange\":\"<key change>\",\"headline\":\"<headline>\",\"subheadline\":\"<sub>\",\"bodyText\":\"<body>\",\"cta\":\"<cta>\",\"visualDirection\":\"<visual>\",\"whyItWillPerformBetter\":\"<why>\"},\"svgMockup\":\"<complete SVG 600x600 ad mockup with actual copy, colors, layout — valid standalone SVG>\"}";
+  out.innerHTML='<div style="padding:18px;text-align:center;color:var(--t2);font-size:12px"><i class="ti ti-loader-2 spin" style="font-size:22px;display:block;margin-bottom:7px;color:var(--accent)" aria-hidden="true"></i>Writing creative brief...</div>';
+
+  var vi={
+    "improved":"Create an IMPROVED version that fixes these specific issues: "+(analysis.whyNotWorking||[]).join("; ")+". Apply these quick wins: "+(analysis.quickWins||[]).map(function(q){return q.action;}).join("; ")+". Keep what's already working: "+(analysis.whyWorking||[]).slice(0,2).join("; ")+".",
+    "variant":"Create a genuinely DIFFERENT A/B test variant. Test this specific hypothesis: "+(analysis.abTestIdeas&&typeof analysis.abTestIdeas[0]==="object"?(analysis.abTestIdeas[0].test+" — "+analysis.abTestIdeas[0].variant):"a different headline angle and CTA")+". This should feel meaningfully different from the original, not just reworded.",
+    "hook":"Create a TOF HOOK-FIRST version optimized purely for thumb-stop on cold audiences. Strip everything except: one bold benefit-driven headline, optional one-line support, and CTA. No clutter, no secondary messages."
+  };
+
+  var prompt="You are an award-winning performance marketing copywriter and art director who has built ads for top DTC brands. You write punchy, specific, conversion-focused ad copy — never generic corporate language.\n\n"+
+    "ORIGINAL CREATIVE ANALYSIS:\n"+
+    "- Platform: "+plLabel+"\n"+
+    "- Current score: "+analysis.overallScore+"/10\n"+
+    "- Current headline: "+(analysis.copyAnalysis&&analysis.copyAnalysis.headline?analysis.copyAnalysis.headline:"N/A")+"\n"+
+    "- Current CTA: "+(analysis.copyAnalysis&&analysis.copyAnalysis.ctaText?analysis.copyAnalysis.ctaText:"N/A")+"\n"+
+    "- Issues to fix: "+(analysis.whyNotWorking||[]).join("; ")+"\n"+
+    "- What's working (preserve this): "+(analysis.whyWorking||[]).join("; ")+"\n"+
+    "- Target audience: "+(analysis.audienceResonance&&analysis.audienceResonance.likelyAudience?analysis.audienceResonance.likelyAudience:"N/A")+"\n"+
+    "- Top performer insight to apply: "+(analysis.competitiveIntelligence&&analysis.competitiveIntelligence.topPerformerDifferences&&analysis.competitiveIntelligence.topPerformerDifferences[0]?analysis.competitiveIntelligence.topPerformerDifferences[0].desc:"N/A")+"\n\n"+
+    "TASK: "+(vi[genOptionVal]||vi.improved)+(instructions?"\n\nADDITIONAL CLIENT INSTRUCTIONS (follow these closely): "+instructions:"")+"\n\n"+
+    "WRITING RULES:\n"+
+    "- Headline: max 6 words, benefit-led or curiosity-led, zero corporate jargon, should feel like a real scroll-stopping ad not a slogan\n"+
+    "- Subheadline (if used): max 12 words, supports the headline with a concrete detail (price, proof, or specificity)\n"+
+    "- Body text (if used): max 18 words, one clear supporting point\n"+
+    "- CTA: 2-4 words, action verb first (e.g. 'Shop the Sale', 'Get 20% Off', 'Start Free Trial') — never just 'Learn More' or 'Click Here'\n"+
+    "- Badge (optional): a short urgency/offer tag like 'LIMITED TIME' or '20% OFF TODAY', 2-3 words max, omit if not relevant\n\n"+
+    "Respond ONLY with valid JSON, no markdown, no backticks, no commentary:\n"+
+    "{\"creativeBrief\":{"+
+    "\"concept\":\"<2-3 sentences: the creative concept and why it solves the original issues>\","+
+    "\"keyChange\":\"<the single most important change from the original, one sentence>\","+
+    "\"headline\":\"<max 6 word headline>\","+
+    "\"subheadline\":\"<max 12 words, or empty string if not needed>\","+
+    "\"bodyText\":\"<max 18 words, or empty string if not needed>\","+
+    "\"cta\":\"<2-4 word action CTA>\","+
+    "\"badge\":\"<short urgency tag, or empty string if not relevant>\","+
+    "\"visualDirection\":\"<2-3 sentences describing imagery, photography style, color mood — specific enough for a designer to execute>\","+
+    "\"suggestedPalette\":\"<choose exactly one of: Midnight Violet, Sunset Coral, Forest Fresh, Ocean Trust, Clean Light, Bold Citrus — pick whichever best matches the brand/product mood>\","+
+    "\"whyItWillPerformBetter\":\"<3-4 specific reasons tied directly to the issues identified in the original analysis>\""+
+    "}}";
+
   try{
-    var r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:6000,messages:[{role:"user",content:prompt}]})});
+    var r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:2000,messages:[{role:"user",content:prompt}]})});
     var data=await r.json();
     if(data.error)throw new Error(data.error.message);
     var txt=data.content.map(function(i){return i.text||"";}).join("");
     var gen=JSON.parse(txt.replace(/```json|```/g,"").trim());
-    var brief=gen.creativeBrief||{},svg=gen.svgMockup||"";
+    var brief=gen.creativeBrief||{};
+    var palette=pickPalette(brief);
+    var svg=buildCreativeSVG(brief,palette,genOptionVal);
     window._lastSVG=svg;
     out.innerHTML=
       '<div style="background:var(--bg-surface);border:1px solid var(--border-md);border-radius:var(--rl);overflow:hidden;margin-bottom:13px">'+
       '<div style="padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'+
-      '<div style="display:flex;align-items:center;gap:6px"><i class="ti ti-photo" style="color:var(--accent)" aria-hidden="true"></i><span style="font-size:12px;font-weight:600">Generated Mockup</span></div>'+
-      '<button onclick="dlSVG()" style="padding:4px 10px;border-radius:var(--r);border:1px solid var(--border-md);background:var(--bg-card2);color:var(--t2);font-size:10px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:3px"><i class="ti ti-download" style="font-size:11px" aria-hidden="true"></i> Download SVG</button>'+
-      '</div>'+
-      '<div style="padding:14px;display:flex;justify-content:center;background:repeating-conic-gradient(rgba(255,255,255,0.02) 0% 25%,transparent 0% 50%) 0 0/18px 18px">'+svg+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:6px"><i class="ti ti-photo" style="color:var(--accent)" aria-hidden="true"></i><span style="font-size:12px;font-weight:600">Generated Mockup</span><span style="font-size:9px;color:var(--t3);margin-left:6px">'+palette.name+' palette</span></div>'+
+      '<div style="display:flex;gap:6px">'+
+      '<button onclick="regenerateSVG()" style="padding:4px 10px;border-radius:var(--r);border:1px solid var(--border-md);background:var(--bg-card2);color:var(--t2);font-size:10px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:3px"><i class="ti ti-refresh" style="font-size:11px" aria-hidden="true"></i> New Palette</button>'+
+      '<button onclick="dlSVG()" style="padding:4px 10px;border-radius:var(--r);border:1px solid var(--border-md);background:var(--bg-card2);color:var(--t2);font-size:10px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:3px"><i class="ti ti-download" style="font-size:11px" aria-hidden="true"></i> Download</button>'+
+      '</div></div>'+
+      '<div style="padding:14px;display:flex;justify-content:center;background:repeating-conic-gradient(rgba(255,255,255,0.02) 0% 25%,transparent 0% 50%) 0 0/18px 18px"><div style="max-width:340px;width:100%">'+svg+'</div></div></div>'+
       '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.1rem;margin-bottom:11px">'+
       '<div style="display:flex;align-items:center;gap:7px;margin-bottom:13px"><i class="ti ti-file-text" style="color:var(--accent2)" aria-hidden="true"></i><span style="font-size:13px;font-weight:600;font-family:var(--font-display)">Creative Brief</span></div>'+
       '<div style="padding:11px;background:linear-gradient(135deg,rgba(124,106,247,0.08),rgba(79,209,197,0.05));border-radius:var(--r);border:1px solid rgba(124,106,247,0.2);margin-bottom:13px">'+
@@ -887,14 +1040,29 @@ async function generateCreative(){
       '<div style="padding:10px;background:var(--bg-surface);border-radius:var(--r)"><p style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Headline</p><p style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.4">"'+(brief.headline||"")+'"</p></div>'+
       '<div style="padding:10px;background:var(--bg-surface);border-radius:var(--r)"><p style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">CTA</p><div style="display:inline-block;padding:5px 12px;background:linear-gradient(135deg,var(--accent),#5b4fd4);border-radius:var(--r);font-size:12px;font-weight:600;color:#fff">'+(brief.cta||"")+'</div></div>'+
       '</div>'+
+      (brief.subheadline?'<div style="margin-bottom:10px"><p style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">Subheadline</p><p style="font-size:12px;color:var(--t2)">'+brief.subheadline+'</p></div>':'')+
+      (brief.bodyText?'<div style="margin-bottom:10px"><p style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">Body Copy</p><p style="font-size:12px;color:var(--t2);line-height:1.6">'+brief.bodyText+'</p></div>':'')+
       (brief.visualDirection?'<div style="margin-bottom:11px;padding:10px;background:var(--bg-surface);border-radius:var(--r)"><p style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">Visual Direction</p><p style="font-size:11px;color:var(--t2);line-height:1.6">'+brief.visualDirection+'</p></div>':'')+
       '<div style="padding:11px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:var(--r);margin-bottom:9px">'+
       '<p style="font-size:10px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Why This Will Outperform</p>'+
       '<p style="font-size:12px;color:var(--t1);line-height:1.65">'+(brief.whyItWillPerformBetter||"")+'</p></div>'+
       (brief.keyChange?'<div style="padding:9px 11px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:var(--r)"><p style="font-size:10px;font-weight:600;color:var(--yellow);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">Key Change</p><p style="font-size:11px;color:var(--t2)">'+brief.keyChange+'</p></div>':'')+
-      '</div>';
+      '</div>'+
+      '<div style="padding:10px 12px;background:var(--bg-surface);border-radius:var(--r);font-size:11px;color:var(--t3);line-height:1.6">This mockup shows layout, copy, and color direction. Swap the placeholder visual block for your real product photography/imagery before shipping.</div>';
+    window._lastBrief=brief;
   }catch(err){out.innerHTML='<div class="error-box"><i class="ti ti-alert-circle" aria-hidden="true"></i> Generation failed: '+err.message+'</div>';}
   btn.innerHTML='<i class="ti ti-wand" aria-hidden="true"></i> Generate Creative Brief + Mockup';btn.disabled=false;
+}
+
+function regenerateSVG(){
+  if(!window._lastBrief)return;
+  var palette=DESIGN_PALETTES[Math.floor(Math.random()*DESIGN_PALETTES.length)];
+  var svg=buildCreativeSVG(window._lastBrief,palette,genOptionVal);
+  window._lastSVG=svg;
+  var wrap=document.querySelector("#gen-output > div:first-child > div:last-child > div");
+  if(wrap)wrap.innerHTML=svg;
+  var label=document.querySelector("#gen-output > div:first-child span[style*='margin-left']");
+  if(label)label.textContent=palette.name+" palette";
 }
 
 function dlSVG(){
