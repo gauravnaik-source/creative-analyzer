@@ -1,4 +1,5 @@
 {
+  "buildCommand": "npm install",
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/public/$1" }
   ]
