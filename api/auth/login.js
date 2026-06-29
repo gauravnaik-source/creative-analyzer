@@ -1,5 +1,24 @@
-import { sql, ensureTable } from './db.js';
+import { sql } from '@vercel/postgres';
 import crypto from 'crypto';
+
+async function ensureTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      expires_at TIMESTAMP NOT NULL
+    );
+  `;
+}
 
 function hashPassword(password, salt) {
   return crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
@@ -40,7 +59,7 @@ export default async function handler(req, res) {
     }
 
     const token = generateToken();
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await sql`INSERT INTO sessions (token, username, expires_at) VALUES (${token}, ${cleanUsername}, ${expiresAt.toISOString()})`;
 
     return res.status(200).json({ success: true, token, username: cleanUsername });
