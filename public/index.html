@@ -671,6 +671,10 @@ function resetRight(){
 // ============================================================
 async function runAnalysis(){
   if(!file)return;
+  if(!currentUser){
+    openAuthModal('login');
+    return;
+  }
   var k=getKey();
   if(!k){
     var e=document.getElementById("apikey-error");e.style.display="block";e.textContent="Please connect your API key first.";
@@ -714,7 +718,7 @@ async function runAnalysis(){
       body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:8000,system:sys,messages:[{role:"user",content:content}]})
     });
     var data=await r.json();
-    if(data.error)throw new Error(data.error.message);
+    if(data.error)throw new Error(typeof data.error==="string"?data.error:data.error.message);
     var txt=data.content.map(function(i){return i.text||"";}).join("");
     analysis=JSON.parse(txt.replace(/```json|```/g,"").trim());
     renderAnalysis();
@@ -1028,6 +1032,10 @@ function renderBulkFileGrid(){
 
 async function runBulkAnalysis(){
   if(!bulkFiles.length)return;
+  if(!currentUser){
+    openAuthModal('login');
+    return;
+  }
   var k=getKey();if(!k){document.getElementById("apikey-error").style.display="block";document.getElementById("apikey-error").textContent="Please connect your API key first.";return;}
   var btn=document.getElementById("bulk-analyze-btn");
   btn.innerHTML='<i class="ti ti-loader-2 spin" aria-hidden="true"></i> Analyzing '+bulkFiles.length+' creatives...';btn.disabled=true;
@@ -1050,7 +1058,7 @@ async function runBulkAnalysis(){
         body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:3000,system:sys,
           messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:f.type||"image/jpeg",data:b64}},{type:"text",text:"Analyze this "+plLabel+" ad. "+(ctx?"Context: "+ctx:"")}]}]})});
       var data=await r.json();
-      if(data.error)throw new Error(data.error.message);
+      if(data.error)throw new Error(typeof data.error==="string"?data.error:data.error.message);
       var txt=data.content.map(function(i2){return i2.text||"";}).join("");
       var res=JSON.parse(txt.replace(/```json|```/g,"").trim());
       bulkResults.push({file:f,url:URL.createObjectURL(f),name:f.name,result:res,error:null});
