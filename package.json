@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "description": "AI-powered ad creative analyzer with competitive benchmarks and user authentication",
   "dependencies": {
-    "@vercel/postgres": "^0.10.0"
+    "@neondatabase/serverless": "^1.0.0"
   }
 }
