@@ -242,6 +242,20 @@ function renderAuthArea(){
   } else {
     el.innerHTML = '<button class="auth-btn" onclick="openAuthModal(\'login\')"><i class="ti ti-user" aria-hidden="true"></i> Sign In</button>';
   }
+  updateGateVisibility();
+}
+
+function updateGateVisibility(){
+  var gate = document.getElementById("landing-gate");
+  var main = document.getElementById("app-main");
+  if(!gate || !main) return;
+  if(currentUser){
+    gate.style.display = "none";
+    main.style.display = "block";
+  } else {
+    gate.style.display = "block";
+    main.style.display = "none";
+  }
 }
 
 function escapeHtml(s){
@@ -366,6 +380,18 @@ document.addEventListener("DOMContentLoaded", checkSession);
     <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">Log In</button>
   </div>
 </div>
+
+<div id="landing-gate" style="display:none;max-width:460px;margin:50px auto;text-align:center">
+  <div style="width:64px;height:64px;margin:0 auto 18px;background:linear-gradient(135deg,var(--accent),#5b4fd4);border-radius:var(--rxl);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;box-shadow:0 0 30px rgba(124,106,247,0.4)"><i class="ti ti-ad-2" aria-hidden="true"></i></div>
+  <h1 style="font-family:var(--font-display);font-size:24px;font-weight:800;margin-bottom:9px">Sign in to get started</h1>
+  <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:26px">Creative Analyzer scores your ad creatives against industry benchmarks using AI. Sign in or create a free account to start analyzing.</p>
+  <div style="display:flex;gap:9px;justify-content:center;flex-wrap:wrap">
+    <button class="auth-btn" style="padding:11px 22px;font-size:13px" onclick="openAuthModal('login')"><i class="ti ti-login" aria-hidden="true"></i> Sign In</button>
+    <button class="analyze-btn ready" style="width:auto;padding:11px 22px" onclick="openAuthModal('signup')"><i class="ti ti-user-plus" aria-hidden="true"></i> Create Account</button>
+  </div>
+</div>
+
+<div id="app-main" style="display:none">
   <div class="apikey-wrap" id="apikey-banner">
     <div style="display:flex;align-items:center;gap:7px">
       <i class="ti ti-key" style="font-size:14px;color:var(--t2)" aria-hidden="true"></i>
@@ -456,6 +482,7 @@ document.addEventListener("DOMContentLoaded", checkSession);
       <div id="bulk-results"></div>
     </div>
   </div>
+</div>
 </div>
 
 <script>
