@@ -157,8 +157,6 @@ textarea::placeholder{color:var(--t3)}
 .qw-card{display:flex;gap:11px;padding:13px;background:var(--bg-surface);border-radius:var(--rl);margin-bottom:9px;border:1px solid var(--border);transition:border-color .15s}
 .qw-card:hover{border-color:var(--border-md)}
 .qw-num{width:30px;height:30px;border-radius:99px;background:linear-gradient(135deg,rgba(251,191,36,0.2),rgba(251,191,36,0.1));border:1px solid rgba(251,191,36,0.3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--yellow);flex-shrink:0}
-.gen-option{padding:12px;border-radius:var(--r);cursor:pointer;text-align:center;transition:all .15s;border:1px solid var(--border)}
-.gen-option:hover{border-color:rgba(124,106,247,0.3)}
 .bulk-upload-zone{border:1.5px dashed var(--border-md);border-radius:var(--rl);padding:2.25rem;text-align:center;cursor:pointer;background:var(--bg-surface);transition:all .2s;margin-bottom:14px;position:relative;overflow:hidden}
 .bulk-upload-zone:hover{border-color:var(--accent);background:rgba(124,106,247,0.06)}
 .bulk-file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;margin-bottom:13px}
@@ -233,22 +231,6 @@ function switchMode(mode){
   document.getElementById("mode-single").className="mode-btn"+(mode==="single"?" active":"");
   document.getElementById("mode-bulk").className="mode-btn"+(mode==="bulk"?" active":"");
 }
-function saveOpenAIKey(){
-  var v=document.getElementById("openai-input").value.trim();
-  var e=document.getElementById("openai-error");
-  if(!v||v.length<10){e.style.display="block";e.textContent="Please enter a valid OpenAI API key";return;}
-  e.style.display="none";
-  localStorage.setItem("ca_openai_key",v);
-  document.getElementById("openai-banner").classList.add("saved");
-  document.getElementById("openai-badge").style.display="inline-block";
-  var btn=document.querySelector("#openai-banner .apikey-btn");
-  if(btn){var orig=btn.innerHTML;btn.innerHTML='<i class="ti ti-check" aria-hidden="true"></i> Connected!';btn.style.background="var(--green)";setTimeout(function(){btn.innerHTML=orig;btn.style.background="";},2000);}
-}
-function toggleOpenAIKey(){
-  var inp=document.getElementById("openai-input"),icon=document.getElementById("openai-eye-icon");
-  var vis=inp.type==="text";inp.type=vis?"password":"text";icon.className=vis?"ti ti-eye":"ti ti-eye-off";
-}
-function getOpenAIKey(){return localStorage.getItem("ca_openai_key")||"";}
   var authMode = "login"; // "login" | "signup"
 var currentUser = null;
 
@@ -399,21 +381,6 @@ document.addEventListener("DOMContentLoaded", checkSession);
     <p class="apikey-hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> &mdash; stored only in your browser</p>
   </div>
 
-  <div class="apikey-wrap" id="openai-banner" style="margin-top:-8px">
-    <div style="display:flex;align-items:center;gap:7px">
-      <i class="ti ti-photo-ai" style="font-size:14px;color:var(--t2)" aria-hidden="true"></i>
-      <span style="font-size:13px;font-weight:500">OpenAI API Key <span style="font-weight:400;color:var(--t3)">(for image generation)</span></span>
-      <span id="openai-badge" style="display:none;font-size:10px;font-weight:600;background:rgba(52,211,153,0.15);color:var(--green);padding:2px 9px;border-radius:99px;margin-left:auto">CONNECTED</span>
-    </div>
-    <div class="apikey-row">
-      <input class="apikey-input" id="openai-input" type="password" placeholder="sk-proj-..." autocomplete="off" spellcheck="false"/>
-      <button class="apikey-toggle" id="openai-toggle" onclick="toggleOpenAIKey()"><i class="ti ti-eye" id="openai-eye-icon" aria-hidden="true"></i></button>
-      <button class="apikey-btn" onclick="saveOpenAIKey()"><i class="ti ti-plug" aria-hidden="true"></i> Connect</button>
-    </div>
-    <p class="apikey-error" id="openai-error">Please enter a valid OpenAI API key</p>
-    <p class="apikey-hint">Get your key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a> &mdash; needed only for the "Generate Creative" tab (DALL-E 3)</p>
-  </div>
-
   <div class="mode-toggle">
     <button class="mode-btn active" id="mode-single" onclick="switchMode('single')">
       <i class="ti ti-photo" aria-hidden="true"></i> Single Creative
@@ -514,7 +481,6 @@ const TABS=[
   {id:"platform",label:"Platform",icon:"ti-device-mobile"},
   {id:"copy",label:"Copy",icon:"ti-text-size"},
   {id:"abtests",label:"A/B Tests",icon:"ti-test-pipe"},
-  {id:"generate",label:"Generate",icon:"ti-wand"},
 ];
 const BENCHMARKS={
   meta:{attention:6.8,clarity:6.5,emotion:6.2,brandAlignment:6.4,cta:6.0,platformFit:7.0,overallScore:6.5},
@@ -526,7 +492,7 @@ const BENCHMARKS={
 };
 
 let selPlat="meta",selType="static",file=null,url=null,analysis=null,heatmap=false,imgW=400,imgH=300;
-let bulkFiles=[],bulkResults=[],bulkPlat="meta",genOptionVal="improved";
+let bulkFiles=[],bulkResults=[],bulkPlat="meta";
 
 // ============================================================
 // HELPERS
@@ -999,167 +965,6 @@ function switchTab(id,pc,plLabel,bm){
       tests.map(function(idea,i){return '<div class="ab-row"><div class="ab-num">'+(i+1)+'</div><span>'+idea+'</span></div>';}).join(""))
     ,"var(--accent2)");
   }
-
-  if(id==="generate"){
-    c.innerHTML='<div class="s-card fade">'+
-      '<div class="s-card-title"><i class="ti ti-wand" style="color:var(--accent)" aria-hidden="true"></i><span>Generate Improved Creative</span></div>'+
-      '<div style="padding:13px;background:linear-gradient(135deg,rgba(124,106,247,0.08),rgba(79,209,197,0.05));border:1px solid rgba(124,106,247,0.2);border-radius:var(--rl);margin-bottom:15px">'+
-      '<p style="font-size:12px;color:var(--t2);line-height:1.6">Based on the analysis, the AI will generate an improved creative brief + SVG mockup that fixes identified issues and applies top performer insights.</p></div>'+
-      '<p class="section-label" style="margin-bottom:7px">Choose what to generate</p>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:15px">'+
-      '<div class="gen-option" id="go-improved" data-val="improved" onclick="selGen(this)" style="background:rgba(124,106,247,0.12);border-color:rgba(124,106,247,0.4)"><div style="font-size:17px;margin-bottom:3px">&#10024;</div><div style="font-size:12px;font-weight:600;color:var(--accent)">Improved</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Fix all issues</div></div>'+
-      '<div class="gen-option" id="go-variant" data-val="variant" onclick="selGen(this)"><div style="font-size:17px;margin-bottom:3px">&#129514;</div><div style="font-size:12px;font-weight:600;color:var(--t1)">A/B Variant</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Test-ready alternate</div></div>'+
-      '<div class="gen-option" id="go-hook" data-val="hook" onclick="selGen(this)"><div style="font-size:17px;margin-bottom:3px">&#9889;</div><div style="font-size:12px;font-weight:600;color:var(--t1)">Hook Focus</div><div style="font-size:10px;color:var(--t3);margin-top:2px">Max scroll-stop</div></div>'+
-      '</div>'+
-      '<p class="section-label" style="margin-bottom:5px">Additional instructions <span style="font-weight:400;color:var(--t3);text-transform:none;letter-spacing:0">(optional)</span></p>'+
-      '<textarea id="gen-instructions" placeholder="e.g. Keep green color scheme, add urgency with limited time offer..." style="margin-bottom:13px;min-height:56px"></textarea>'+
-      '<button id="gen-btn" onclick="generateCreative()" style="width:100%;padding:12px;border-radius:var(--rl);border:none;background:linear-gradient(135deg,var(--accent),#5b4fd4);color:#fff;font-size:13px;font-weight:700;font-family:var(--font-display);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px">'+
-      '<i class="ti ti-wand" aria-hidden="true"></i> Generate Creative Brief + Mockup</button>'+
-      '<div id="gen-output" style="margin-top:15px"></div>'+
-      '</div>';
-  }
-}
-
-function selGen(el){
-  document.querySelectorAll(".gen-option").forEach(function(x){x.style.background="var(--bg-surface)";x.style.borderColor="var(--border)";var d=x.querySelector("div:nth-child(2)");if(d)d.style.color="var(--t1)";});
-  el.style.background="rgba(124,106,247,0.12)";el.style.borderColor="rgba(124,106,247,0.4)";
-  var d=el.querySelector("div:nth-child(2)");if(d)d.style.color="var(--accent)";
-  genOptionVal=el.dataset.val;
-}
-
-async function generateCreative(){
-  if(!analysis)return;
-  var k=getKey();if(!k)return;
-  var ok=getOpenAIKey();
-  if(!ok){
-    var oe=document.getElementById("openai-error");
-    oe.style.display="block";oe.textContent="Please connect your OpenAI API key above to generate images.";
-    document.getElementById("openai-input").focus();
-    return;
-  }
-  var btn=document.getElementById("gen-btn"),out=document.getElementById("gen-output");
-  var instructions=document.getElementById("gen-instructions")?document.getElementById("gen-instructions").value:"";
-  var pl=PLATFORMS.find(function(p){return p.id===selPlat;});var plLabel=pl?pl.label:selPlat;
-  btn.innerHTML='<i class="ti ti-loader-2 spin" aria-hidden="true"></i> Writing brief...';btn.disabled=true;
-  out.innerHTML='<div style="padding:18px;text-align:center;color:var(--t2);font-size:12px"><i class="ti ti-loader-2 spin" style="font-size:22px;display:block;margin-bottom:7px;color:var(--accent)" aria-hidden="true"></i>Writing creative brief...</div>';
-
-  var vi={
-    "improved":"Create an IMPROVED version that fixes these specific issues: "+(analysis.whyNotWorking||[]).join("; ")+". Apply these quick wins: "+(analysis.quickWins||[]).map(function(q){return q.action;}).join("; ")+". Keep what's already working: "+(analysis.whyWorking||[]).slice(0,2).join("; ")+".",
-    "variant":"Create a genuinely DIFFERENT A/B test variant. Test this specific hypothesis: "+(analysis.abTestIdeas&&typeof analysis.abTestIdeas[0]==="object"?(analysis.abTestIdeas[0].test+" — "+analysis.abTestIdeas[0].variant):"a different headline angle and CTA")+". This should feel meaningfully different from the original, not just reworded.",
-    "hook":"Create a TOF HOOK-FIRST version optimized purely for thumb-stop on cold audiences. Strip everything except: one bold benefit-driven headline, optional one-line support, and CTA. No clutter, no secondary messages."
-  };
-
-  var briefPrompt="You are an award-winning performance marketing copywriter and art director. Write punchy, specific, conversion-focused ad copy — never generic corporate language.\n\n"+
-    "ORIGINAL CREATIVE ANALYSIS:\n"+
-    "- Platform: "+plLabel+"\n"+
-    "- Current score: "+analysis.overallScore+"/10\n"+
-    "- Current headline: "+(analysis.copyAnalysis&&analysis.copyAnalysis.headline?analysis.copyAnalysis.headline:"N/A")+"\n"+
-    "- Issues to fix: "+(analysis.whyNotWorking||[]).join("; ")+"\n"+
-    "- What's working (preserve this): "+(analysis.whyWorking||[]).join("; ")+"\n"+
-    "- Target audience: "+(analysis.audienceResonance&&analysis.audienceResonance.likelyAudience?analysis.audienceResonance.likelyAudience:"N/A")+"\n"+
-    "- Top performer insight to apply: "+(analysis.competitiveIntelligence&&analysis.competitiveIntelligence.topPerformerDifferences&&analysis.competitiveIntelligence.topPerformerDifferences[0]?analysis.competitiveIntelligence.topPerformerDifferences[0].desc:"N/A")+"\n\n"+
-    "TASK: "+(vi[genOptionVal]||vi.improved)+(instructions?"\n\nADDITIONAL CLIENT INSTRUCTIONS (follow closely): "+instructions:"")+"\n\n"+
-    "WRITING RULES:\n"+
-    "- Headline: max 6 words, benefit-led or curiosity-led, zero corporate jargon\n"+
-    "- Subheadline: max 12 words, adds a concrete detail (price, proof, specificity), or empty string if not needed\n"+
-    "- CTA: 2-4 words, action verb first, never 'Learn More' or 'Click Here'\n"+
-    "- Badge: short urgency/offer tag (2-3 words) or empty string\n"+
-    "- imagePrompt: a detailed, vivid visual description for an AI image generator to create the actual ad creative. Describe: the product/subject, setting/background, lighting and mood, composition and layout, where the headline text should appear and what it says verbatim, where the CTA button should appear and what it says verbatim, color palette, and overall style (e.g. 'clean modern e-commerce photography', 'bold Gen-Z social ad aesthetic', 'premium minimalist'). Be extremely specific — this prompt fully determines the final image. Always specify 'the text must read exactly: \\\"[headline]\\\"' to ensure accurate text rendering.\n\n"+
-    "Respond ONLY with valid JSON, no markdown, no backticks, no commentary:\n"+
-    "{\"creativeBrief\":{"+
-    "\"concept\":\"<2-3 sentences: the creative concept and why it solves the original issues>\","+
-    "\"keyChange\":\"<the single most important change from the original, one sentence>\","+
-    "\"headline\":\"<max 6 word headline>\","+
-    "\"subheadline\":\"<max 12 words, or empty string>\","+
-    "\"cta\":\"<2-4 word action CTA>\","+
-    "\"badge\":\"<short urgency tag, or empty string>\","+
-    "\"imagePrompt\":\"<detailed vivid image generation prompt as described above, 80-150 words>\","+
-    "\"whyItWillPerformBetter\":\"<3-4 specific reasons tied directly to issues identified in the original analysis>\""+
-    "}}";
-
-  try{
-    var r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:2000,messages:[{role:"user",content:briefPrompt}]})});
-    var data=await r.json();
-    if(data.error)throw new Error(data.error.message);
-    var txt=data.content.map(function(i){return i.text||"";}).join("");
-    var gen=JSON.parse(txt.replace(/```json|```/g,"").trim());
-    var brief=gen.creativeBrief||{};
-    window._lastBrief=brief;
-
-    btn.innerHTML='<i class="ti ti-loader-2 spin" aria-hidden="true"></i> Generating image...';
-    out.innerHTML='<div style="padding:18px;text-align:center;color:var(--t2);font-size:12px"><i class="ti ti-loader-2 spin" style="font-size:22px;display:block;margin-bottom:7px;color:var(--accent)" aria-hidden="true"></i>Generating image with DALL-E 3 (this takes ~15-20 seconds)...</div>';
-
-    var imagePromptText=brief.imagePrompt||("An advertising creative with the headline text \""+(brief.headline||"")+"\" and a call-to-action button that says \""+(brief.cta||"")+"\"");
-
-    var imgR=await fetch("/api/generate-image",{
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-openai-key":ok},
-      body:JSON.stringify({
-        model:"dall-e-3",
-        prompt:imagePromptText,
-        n:1,
-        size:"1024x1024",
-        quality:"hd",
-        style:"vivid"
-      })
-    });
-    var imgData=await imgR.json();
-
-    // Retry with minimal params if the account/model rejects style/quality/n
-    if(imgData.error){
-      var msg=(imgData.error.message||"").toLowerCase();
-      if(msg.indexOf("unknown parameter")>-1||msg.indexOf("unsupported")>-1){
-        var retryR=await fetch("/api/generate-image",{
-          method:"POST",
-          headers:{"Content-Type":"application/json","x-openai-key":ok},
-          body:JSON.stringify({
-            model:"dall-e-3",
-            prompt:imagePromptText,
-            size:"1024x1024"
-          })
-        });
-        imgData=await retryR.json();
-      }
-    }
-    if(imgData.error)throw new Error(imgData.error.message||"Image generation failed");
-    var imageUrl=imgData.data&&imgData.data[0]?imgData.data[0].url:null;
-    if(!imageUrl)throw new Error("No image returned");
-    window._lastImageUrl=imageUrl;
-
-    out.innerHTML=
-      '<div style="background:var(--bg-surface);border:1px solid var(--border-md);border-radius:var(--rl);overflow:hidden;margin-bottom:13px">'+
-      '<div style="padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'+
-      '<div style="display:flex;align-items:center;gap:6px"><i class="ti ti-photo" style="color:var(--accent)" aria-hidden="true"></i><span style="font-size:12px;font-weight:600">Generated Creative</span><span style="font-size:9px;color:var(--t3);margin-left:6px">DALL-E 3</span></div>'+
-      '<button onclick="dlImage()" style="padding:4px 10px;border-radius:var(--r);border:1px solid var(--border-md);background:var(--bg-card2);color:var(--t2);font-size:10px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:3px"><i class="ti ti-download" style="font-size:11px" aria-hidden="true"></i> Download</button>'+
-      '</div>'+
-      '<div style="padding:14px;display:flex;justify-content:center;background:repeating-conic-gradient(rgba(255,255,255,0.02) 0% 25%,transparent 0% 50%) 0 0/18px 18px">'+
-      '<img src="'+imageUrl+'" style="max-width:100%;width:380px;border-radius:8px;display:block" alt="Generated creative"/>'+
-      '</div></div>'+
-      '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.1rem;margin-bottom:11px">'+
-      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:13px"><i class="ti ti-file-text" style="color:var(--accent2)" aria-hidden="true"></i><span style="font-size:13px;font-weight:600;font-family:var(--font-display)">Creative Brief</span></div>'+
-      '<div style="padding:11px;background:linear-gradient(135deg,rgba(124,106,247,0.08),rgba(79,209,197,0.05));border-radius:var(--r);border:1px solid rgba(124,106,247,0.2);margin-bottom:13px">'+
-      '<p style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">Concept</p>'+
-      '<p style="font-size:12px;color:var(--t1);line-height:1.6">'+(brief.concept||"")+'</p></div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px">'+
-      '<div style="padding:10px;background:var(--bg-surface);border-radius:var(--r)"><p style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Headline</p><p style="font-size:13px;font-weight:600;color:var(--t1);line-height:1.4">"'+(brief.headline||"")+'"</p></div>'+
-      '<div style="padding:10px;background:var(--bg-surface);border-radius:var(--r)"><p style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">CTA</p><div style="display:inline-block;padding:5px 12px;background:linear-gradient(135deg,var(--accent),#5b4fd4);border-radius:var(--r);font-size:12px;font-weight:600;color:#fff">'+(brief.cta||"")+'</div></div>'+
-      '</div>'+
-      (brief.subheadline?'<div style="margin-bottom:10px"><p style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">Subheadline</p><p style="font-size:12px;color:var(--t2)">'+brief.subheadline+'</p></div>':'')+
-      '<div style="padding:11px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:var(--r);margin-bottom:9px">'+
-      '<p style="font-size:10px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Why This Will Outperform</p>'+
-      '<p style="font-size:12px;color:var(--t1);line-height:1.65">'+(brief.whyItWillPerformBetter||"")+'</p></div>'+
-      (brief.keyChange?'<div style="padding:9px 11px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:var(--r)"><p style="font-size:10px;font-weight:600;color:var(--yellow);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">Key Change</p><p style="font-size:11px;color:var(--t2)">'+brief.keyChange+'</p></div>':'')+
-      '</div>'+
-      '<div style="padding:10px 12px;background:var(--bg-surface);border-radius:var(--r);font-size:11px;color:var(--t3);line-height:1.6">Note: DALL-E 3 may render text slightly differently than specified. Use this as a strong visual starting point and finalize exact copy in your design tool if needed.</div>';
-  }catch(err){
-    out.innerHTML='<div class="error-box"><i class="ti ti-alert-circle" aria-hidden="true"></i> Generation failed: '+err.message+'</div>';
-  }
-  btn.innerHTML='<i class="ti ti-wand" aria-hidden="true"></i> Generate Creative Brief + Image';btn.disabled=false;
-}
-
-function dlImage(){
-  if(!window._lastImageUrl)return;
-  var a=document.createElement("a");a.href=window._lastImageUrl;a.target="_blank";a.download="generated-creative.png";a.click();
 }
 
 // ============================================================
@@ -1377,10 +1182,6 @@ document.addEventListener("DOMContentLoaded",function(){
   var k=getKey();
   if(k){document.getElementById("apikey-input").value=k;document.getElementById("apikey-banner").classList.add("saved");document.getElementById("apikey-badge").style.display="inline-block";}
   document.getElementById("apikey-input").addEventListener("keydown",function(e){if(e.key==="Enter")saveKey();});
-
-  var ok=getOpenAIKey();
-  if(ok){document.getElementById("openai-input").value=ok;document.getElementById("openai-banner").classList.add("saved");document.getElementById("openai-badge").style.display="inline-block";}
-  document.getElementById("openai-input").addEventListener("keydown",function(e){if(e.key==="Enter")saveOpenAIKey();});
 
   // Single platform pills
   var pg=document.getElementById("platform-grid");
