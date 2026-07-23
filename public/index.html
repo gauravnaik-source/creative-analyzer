@@ -185,6 +185,29 @@ textarea::placeholder{color:var(--t3)}
 .bulk-progress-bar{height:4px;background:var(--bg-surface2);border-radius:99px;overflow:hidden;margin-top:6px}
 .bulk-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .3s ease}
 @media(max-width:700px){.main-grid{grid-template-columns:1fr!important}.benchmark-grid{grid-template-columns:1fr}}
+  .auth-btn{margin-left:10px;padding:6px 14px;border-radius:99px;border:1px solid var(--border-md);background:var(--bg-surface);color:var(--t1);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+.auth-btn:hover{background:var(--bg-surface2)}
+.auth-user{margin-left:10px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2)}
+.auth-user b{color:var(--t1);font-weight:600}
+.auth-logout{background:none;border:none;color:var(--t3);font-size:12px;cursor:pointer;text-decoration:underline}
+.auth-logout:hover{color:var(--t1)}
+.auth-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center}
+.auth-modal-backdrop.open{display:flex}
+.auth-modal{background:var(--bg-card);border:1px solid var(--border-md);border-radius:var(--rxl);padding:1.5rem;width:100%;max-width:340px;position:relative}
+.auth-modal-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--t3);font-size:18px;cursor:pointer}
+.auth-modal-title{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:4px}
+.auth-modal-sub{font-size:12px;color:var(--t2);margin-bottom:16px}
+.auth-tabs{display:flex;gap:6px;background:var(--bg-surface);border-radius:var(--rl);padding:4px;margin-bottom:16px}
+.auth-tab{flex:1;padding:7px;border:none;border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-display)}
+.auth-tab.active{background:rgba(124,106,247,0.2);color:var(--accent)}
+.auth-field{margin-bottom:10px}
+.auth-field label{display:block;font-size:11px;color:var(--t2);margin-bottom:5px;font-weight:500}
+.auth-field input{width:100%;font-size:13px;padding:9px 11px;border-radius:var(--r);border:1px solid var(--border-md);background:var(--bg-surface);color:var(--t1);outline:none;transition:border-color .15s}
+.auth-field input:focus{border-color:var(--accent)}
+.auth-error{font-size:11px;color:var(--red);margin:2px 0 10px;display:none}
+.auth-submit{width:100%;padding:11px;border-radius:var(--rl);border:none;font-size:13px;font-weight:700;font-family:var(--font-display);cursor:pointer;background:linear-gradient(135deg,var(--accent),#5b4fd4);color:#fff;margin-top:4px}
+.auth-submit:hover{transform:translateY(-1px)}
+.auth-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none}
 </style>
 <script>
 // Key functions declared early so onclick handlers work immediately
@@ -226,6 +249,105 @@ function toggleOpenAIKey(){
   var vis=inp.type==="text";inp.type=vis?"password":"text";icon.className=vis?"ti ti-eye":"ti ti-eye-off";
 }
 function getOpenAIKey(){return localStorage.getItem("ca_openai_key")||"";}
+  var authMode = "login"; // "login" | "signup"
+var currentUser = null;
+
+function renderAuthArea(){
+  var el = document.getElementById("auth-area");
+  if(!el) return;
+  if(currentUser){
+    el.innerHTML = '<span class="auth-user">Hi, <b>'+escapeHtml(currentUser.username)+'</b> &middot; <button class="auth-logout" onclick="doLogout()">Log out</button></span>';
+  } else {
+    el.innerHTML = '<button class="auth-btn" onclick="openAuthModal(\'login\')"><i class="ti ti-user" aria-hidden="true"></i> Sign In</button>';
+  }
+}
+
+function escapeHtml(s){
+  var d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function openAuthModal(mode){
+  switchAuthTab(mode || "login");
+  document.getElementById("auth-modal-backdrop").classList.add("open");
+}
+function closeAuthModal(){
+  document.getElementById("auth-modal-backdrop").classList.remove("open");
+  document.getElementById("auth-error").style.display = "none";
+  document.getElementById("auth-username").value = "";
+  document.getElementById("auth-password").value = "";
+}
+function switchAuthTab(mode){
+  authMode = mode;
+  document.getElementById("auth-tab-login").className = "auth-tab"+(mode==="login"?" active":"");
+  document.getElementById("auth-tab-signup").className = "auth-tab"+(mode==="signup"?" active":"");
+  document.getElementById("auth-modal-title").textContent = mode==="login" ? "Sign in" : "Create account";
+  document.getElementById("auth-submit-btn").textContent = mode==="login" ? "Log In" : "Sign Up";
+  document.getElementById("auth-error").style.display = "none";
+}
+
+async function submitAuth(){
+  var username = document.getElementById("auth-username").value.trim();
+  var password = document.getElementById("auth-password").value;
+  var errEl = document.getElementById("auth-error");
+  var btn = document.getElementById("auth-submit-btn");
+
+  if(!username || !password){
+    errEl.textContent = "Please fill in both fields";
+    errEl.style.display = "block";
+    return;
+  }
+
+  btn.disabled = true;
+  var origText = btn.textContent;
+  btn.textContent = "Please wait...";
+
+  try{
+    var endpoint = authMode === "login" ? "/api/auth/login" : "/api/auth/signup";
+    var r = await fetch(endpoint, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({username: username, password: password})
+    });
+    var data = await r.json();
+    if(!r.ok){
+      errEl.textContent = data.error || "Something went wrong";
+      errEl.style.display = "block";
+      return;
+    }
+    currentUser = data.user;
+    renderAuthArea();
+    closeAuthModal();
+  } catch(e){
+    errEl.textContent = "Network error, please try again";
+    errEl.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+async function doLogout(){
+  try{
+    await fetch("/api/auth/logout", {method: "POST"});
+  } catch(e){}
+  currentUser = null;
+  renderAuthArea();
+}
+
+async function checkSession(){
+  try{
+    var r = await fetch("/api/auth/me");
+    var data = await r.json();
+    currentUser = data.user || null;
+  } catch(e){
+    currentUser = null;
+  }
+  renderAuthArea();
+}
+
+document.addEventListener("DOMContentLoaded", checkSession);
 </script>
 </head>
 <body>
@@ -239,7 +361,29 @@ function getOpenAIKey(){return localStorage.getItem("ca_openai_key")||"";}
     </div>
     <div class="header-badge">+ PRO</div>
   </div>
+<span id="auth-area"></span>
 
+<div class="auth-modal-backdrop" id="auth-modal-backdrop">
+  <div class="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()"><i class="ti ti-x" aria-hidden="true"></i></button>
+    <div class="auth-modal-title" id="auth-modal-title">Sign in</div>
+    <div class="auth-modal-sub">Save your analyses and access them anywhere</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="auth-tab-login" onclick="switchAuthTab('login')">Log In</button>
+      <button class="auth-tab" id="auth-tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+    <div class="auth-field">
+      <label for="auth-username">Username</label>
+      <input id="auth-username" type="text" autocomplete="username" placeholder="yourname" spellcheck="false"/>
+    </div>
+    <div class="auth-field">
+      <label for="auth-password">Password</label>
+      <input id="auth-password" type="password" autocomplete="current-password" placeholder="••••••••"/>
+    </div>
+    <p class="auth-error" id="auth-error"></p>
+    <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">Log In</button>
+  </div>
+</div>
   <div class="apikey-wrap" id="apikey-banner">
     <div style="display:flex;align-items:center;gap:7px">
       <i class="ti ti-key" style="font-size:14px;color:var(--t2)" aria-hidden="true"></i>
