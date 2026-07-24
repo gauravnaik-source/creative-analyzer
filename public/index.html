@@ -238,7 +238,7 @@ function renderAuthArea(){
   var el = document.getElementById("auth-area");
   if(!el) return;
   if(currentUser){
-    el.innerHTML = '<span class="auth-user">Hi, <b>'+escapeHtml(currentUser.username)+'</b> &middot; <button class="auth-logout" onclick="doLogout()">Log out</button></span>';
+    el.innerHTML = '<span class="auth-user">Hi, <b>'+escapeHtml(currentUser.username)+'</b> &middot; <button class="auth-logout" onclick="openHistoryModal()" style="color:var(--accent)">History</button> &middot; <button class="auth-logout" onclick="doLogout()">Log out</button></span>';
   } else {
     el.innerHTML = '<button class="auth-btn" onclick="openAuthModal(\'login\')"><i class="ti ti-user" aria-hidden="true"></i> Sign In</button>';
   }
@@ -343,6 +343,77 @@ async function checkSession(){
   renderAuthArea();
 }
 
+// ============================================================
+// ANALYSIS HISTORY
+// ============================================================
+async function saveAnalysisToHistory(result, platform, creativeType, context){
+  if(!currentUser || !result) return;
+  try{
+    await fetch("/api/analyses/save", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({platform: platform, creativeType: creativeType, context: context || "", result: result})
+    });
+  } catch(e){
+    console.error("Failed to save analysis to history:", e);
+  }
+}
+
+var historyCache = [];
+
+function openHistoryModal(){
+  document.getElementById("history-modal-backdrop").classList.add("open");
+  loadHistory();
+}
+function closeHistoryModal(){
+  document.getElementById("history-modal-backdrop").classList.remove("open");
+}
+
+async function loadHistory(){
+  var list = document.getElementById("history-list");
+  list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--t3);font-size:12px"><i class="ti ti-loader-2 spin" style="font-size:20px;display:block;margin-bottom:8px" aria-hidden="true"></i>Loading...</div>';
+  try{
+    var r = await fetch("/api/analyses/list");
+    var data = await r.json();
+    if(!r.ok){
+      list.innerHTML = '<div class="error-box"><i class="ti ti-alert-circle" aria-hidden="true"></i> '+(data.error || "Could not load history")+'</div>';
+      return;
+    }
+    historyCache = data.analyses || [];
+    if(!historyCache.length){
+      list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--t3);font-size:12px">No saved analyses yet. Run an analysis to see it here.</div>';
+      return;
+    }
+    list.innerHTML = historyCache.map(function(item, idx){
+      var score = item.overall_score!=null ? Number(item.overall_score).toFixed(1) : "—";
+      var scoreColor = score>=8 ? "var(--green)" : score>=6 ? "var(--yellow)" : "var(--red)";
+      var dt = new Date(item.created_at);
+      var dateStr = dt.toLocaleDateString(undefined,{month:"short",day:"numeric"}) + " " + dt.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
+      return '<div onclick="loadHistoryItem('+idx+')" style="display:flex;align-items:center;gap:11px;padding:11px;background:var(--bg-surface);border-radius:var(--r);margin-bottom:8px;cursor:pointer;border:1px solid var(--border);transition:border-color .15s" onmouseover="this.style.borderColor=\'var(--border-md)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'+
+        '<div style="width:40px;height:40px;border-radius:99px;background:'+scoreColor+'22;color:'+scoreColor+';display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:13px;flex-shrink:0">'+score+'</div>'+
+        '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:12px;color:var(--t1);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHtml(item.headline || "Untitled analysis")+'</div>'+
+        '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+escapeHtml(item.platform || "")+' &middot; '+dateStr+'</div>'+
+        '</div>'+
+        '<i class="ti ti-chevron-right" style="color:var(--t3)" aria-hidden="true"></i>'+
+        '</div>';
+    }).join("");
+  } catch(e){
+    list.innerHTML = '<div class="error-box"><i class="ti ti-alert-circle" aria-hidden="true"></i> Network error loading history</div>';
+  }
+}
+
+function loadHistoryItem(idx){
+  var item = historyCache[idx];
+  if(!item) return;
+  analysis = item.result;
+  closeHistoryModal();
+  document.getElementById("mode-single").click();
+  renderAnalysis();
+  var rp = document.getElementById("right-panel");
+  if(rp) rp.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
 document.addEventListener("DOMContentLoaded", checkSession);
 </script>
 </head>
@@ -378,6 +449,15 @@ document.addEventListener("DOMContentLoaded", checkSession);
     </div>
     <p class="auth-error" id="auth-error"></p>
     <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">Log In</button>
+  </div>
+</div>
+
+<div class="auth-modal-backdrop" id="history-modal-backdrop">
+  <div class="auth-modal" style="max-width:520px">
+    <button class="auth-modal-close" onclick="closeHistoryModal()"><i class="ti ti-x" aria-hidden="true"></i></button>
+    <div class="auth-modal-title">Your Analysis History</div>
+    <div class="auth-modal-sub">Click any past analysis to reopen it</div>
+    <div id="history-list" style="max-height:420px;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -749,6 +829,7 @@ async function runAnalysis(){
     var txt=data.content.map(function(i){return i.text||"";}).join("");
     analysis=JSON.parse(txt.replace(/```json|```/g,"").trim());
     renderAnalysis();
+    saveAnalysisToHistory(analysis, plLabel, isVid?"video":selType, ctx);
   }catch(err){
     var rp2=document.getElementById("right-panel");
     if(!rp2){rp2=document.createElement("div");rp2.id="right-panel";document.getElementById("main-grid").appendChild(rp2);document.getElementById("main-grid").className="main-grid";}
@@ -1089,6 +1170,7 @@ async function runBulkAnalysis(){
       var txt=data.content.map(function(i2){return i2.text||"";}).join("");
       var res=JSON.parse(txt.replace(/```json|```/g,"").trim());
       bulkResults.push({file:f,url:URL.createObjectURL(f),name:f.name,result:res,error:null});
+      saveAnalysisToHistory(res, plLabel, "static", ctx);
       if(card)card.style.borderColor="var(--green)";
       if(statusEl)statusEl.innerHTML='<div style="background:rgba(52,211,153,0.9);border-radius:99px;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">&#10003;</div>';
     }catch(e){
