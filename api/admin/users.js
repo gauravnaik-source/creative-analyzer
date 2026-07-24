@@ -24,7 +24,15 @@ export default async function handler(req, res) {
       ORDER BY u.created_at DESC
     `;
 
-    return res.status(200).json({ users: rows });
+    const statsRows = await sql`
+      SELECT
+        (SELECT COUNT(*) FROM users) AS total_users,
+        (SELECT COUNT(*) FROM analyses) AS total_analyses,
+        (SELECT pg_database_size(current_database())) AS db_size_bytes
+    `;
+    const stats = statsRows[0] || { total_users: 0, total_analyses: 0, db_size_bytes: 0 };
+
+    return res.status(200).json({ users: rows, stats });
   } catch (err) {
     console.error('Admin users list error:', err);
     return res.status(500).json({ error: 'Something went wrong' });
