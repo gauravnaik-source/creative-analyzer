@@ -238,8 +238,12 @@ function renderAuthArea(){
   var el = document.getElementById("auth-area");
   if(!el) return;
   if(currentUser){
-    var adminLink = currentUser.is_admin ? ' &middot; <button class="auth-logout" onclick="openAdminModal()" style="color:var(--accent3)">Admin</button>' : '';
-    el.innerHTML = '<span class="auth-user">Hi, <b>'+escapeHtml(currentUser.username)+'</b> &middot; <button class="auth-logout" onclick="openHistoryModal()" style="color:var(--accent)">History</button>'+adminLink+' &middot; <button class="auth-logout" onclick="doLogout()">Log out</button></span>';
+    var adminBtn = currentUser.is_admin ? '<button class="auth-btn" onclick="openAdminModal()" style="border-color:rgba(246,166,35,0.35);color:var(--accent3)"><i class="ti ti-shield-check" aria-hidden="true"></i> Admin</button>' : '';
+    el.innerHTML =
+      '<span class="auth-user" style="margin-left:0">Hi, <b>'+escapeHtml(currentUser.username)+'</b></span>'+
+      '<button class="auth-btn" onclick="openHistoryModal()"><i class="ti ti-history" aria-hidden="true"></i> History</button>'+
+      adminBtn+
+      '<button class="auth-logout" style="margin-left:6px" onclick="doLogout()">Log out</button>';
   } else {
     el.innerHTML = '<button class="auth-btn" onclick="openAuthModal(\'login\')"><i class="ti ti-user" aria-hidden="true"></i> Sign In</button>';
   }
@@ -430,6 +434,8 @@ function closeAdminModal(){
 
 async function loadAdminUsers(){
   var list = document.getElementById("admin-list");
+  var statsEl = document.getElementById("admin-stats");
+  statsEl.innerHTML = "";
   list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--t3);font-size:12px"><i class="ti ti-loader-2 spin" style="font-size:20px;display:block;margin-bottom:8px" aria-hidden="true"></i>Loading...</div>';
   try{
     var r = await fetch("/api/admin/users");
@@ -439,10 +445,41 @@ async function loadAdminUsers(){
       return;
     }
     adminUsersCache = data.users || [];
+    renderAdminStats(data.stats);
     renderAdminList();
   } catch(e){
     list.innerHTML = '<div class="error-box"><i class="ti ti-alert-circle" aria-hidden="true"></i> Network error loading users</div>';
   }
+}
+
+function renderAdminStats(stats){
+  var statsEl = document.getElementById("admin-stats");
+  if(!stats){ statsEl.innerHTML = ""; return; }
+  var dbBytes = Number(stats.db_size_bytes) || 0;
+  var freeTierCap = 0.5 * 1024 * 1024 * 1024; // Neon free tier: 0.5 GB per project
+  var pct = Math.min(100, (dbBytes / freeTierCap) * 100);
+  var usedMB = (dbBytes / (1024*1024)).toFixed(1);
+  var barColor = pct >= 80 ? "var(--red)" : pct >= 50 ? "var(--yellow)" : "var(--green)";
+
+  statsEl.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'+
+    '<div style="padding:10px;background:var(--bg-surface);border-radius:var(--r);text-align:center">'+
+    '<div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--accent)">'+(stats.total_users||0)+'</div>'+
+    '<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px">Team Members</div>'+
+    '</div>'+
+    '<div style="padding:10px;background:var(--bg-surface);border-radius:var(--r);text-align:center">'+
+    '<div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--accent2)">'+(stats.total_analyses||0)+'</div>'+
+    '<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px">Analyses Saved</div>'+
+    '</div>'+
+    '</div>'+
+    '<div style="margin-bottom:16px">'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:5px">'+
+    '<span style="font-size:11px;color:var(--t2)">Database storage</span>'+
+    '<span style="font-size:11px;color:'+barColor+';font-weight:600">'+usedMB+' MB of 512 MB</span>'+
+    '</div>'+
+    '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div>'+
+    (pct>=80?'<p style="font-size:10px;color:var(--red);margin-top:5px"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Approaching your database\'s free-tier limit</p>':'')+
+    '</div>';
 }
 
 function renderAdminList(){
@@ -539,6 +576,7 @@ document.addEventListener("DOMContentLoaded", checkSession);
     <button class="auth-modal-close" onclick="closeAdminModal()"><i class="ti ti-x" aria-hidden="true"></i></button>
     <div class="auth-modal-title">Team Members</div>
     <div class="auth-modal-sub">Everyone with access to this tool</div>
+    <div id="admin-stats"></div>
     <div id="admin-list" style="max-height:420px;overflow-y:auto"></div>
   </div>
 </div>
